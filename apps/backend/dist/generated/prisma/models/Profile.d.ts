@@ -10,18 +10,24 @@ export type AggregateProfile = {
 export type ProfileMinAggregateOutputType = {
     id: string | null;
     nama: string | null;
+    email: string | null;
+    password: string | null;
     peran: $Enums.Peran | null;
     kawasan_tugas: string | null;
 };
 export type ProfileMaxAggregateOutputType = {
     id: string | null;
     nama: string | null;
+    email: string | null;
+    password: string | null;
     peran: $Enums.Peran | null;
     kawasan_tugas: string | null;
 };
 export type ProfileCountAggregateOutputType = {
     id: number;
     nama: number;
+    email: number;
+    password: number;
     peran: number;
     kawasan_tugas: number;
     _all: number;
@@ -29,18 +35,24 @@ export type ProfileCountAggregateOutputType = {
 export type ProfileMinAggregateInputType = {
     id?: true;
     nama?: true;
+    email?: true;
+    password?: true;
     peran?: true;
     kawasan_tugas?: true;
 };
 export type ProfileMaxAggregateInputType = {
     id?: true;
     nama?: true;
+    email?: true;
+    password?: true;
     peran?: true;
     kawasan_tugas?: true;
 };
 export type ProfileCountAggregateInputType = {
     id?: true;
     nama?: true;
+    email?: true;
+    password?: true;
     peran?: true;
     kawasan_tugas?: true;
     _all?: true;
@@ -72,6 +84,8 @@ export type ProfileGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 export type ProfileGroupByOutputType = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran: $Enums.Peran;
     kawasan_tugas: string | null;
     _count: ProfileCountAggregateOutputType | null;
@@ -87,6 +101,8 @@ export type ProfileWhereInput = {
     NOT?: Prisma.ProfileWhereInput | Prisma.ProfileWhereInput[];
     id?: Prisma.UuidFilter<"Profile"> | string;
     nama?: Prisma.StringFilter<"Profile"> | string;
+    email?: Prisma.StringFilter<"Profile"> | string;
+    password?: Prisma.StringFilter<"Profile"> | string;
     peran?: Prisma.EnumPeranFilter<"Profile"> | $Enums.Peran;
     kawasan_tugas?: Prisma.StringNullableFilter<"Profile"> | string | null;
     reports?: Prisma.ReportListRelationFilter;
@@ -96,6 +112,8 @@ export type ProfileWhereInput = {
 export type ProfileOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     nama?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
+    password?: Prisma.SortOrder;
     peran?: Prisma.SortOrder;
     kawasan_tugas?: Prisma.SortOrderInput | Prisma.SortOrder;
     reports?: Prisma.ReportOrderByRelationAggregateInput;
@@ -104,19 +122,23 @@ export type ProfileOrderByWithRelationInput = {
 };
 export type ProfileWhereUniqueInput = Prisma.AtLeast<{
     id?: string;
+    email?: string;
     AND?: Prisma.ProfileWhereInput | Prisma.ProfileWhereInput[];
     OR?: Prisma.ProfileWhereInput[];
     NOT?: Prisma.ProfileWhereInput | Prisma.ProfileWhereInput[];
     nama?: Prisma.StringFilter<"Profile"> | string;
+    password?: Prisma.StringFilter<"Profile"> | string;
     peran?: Prisma.EnumPeranFilter<"Profile"> | $Enums.Peran;
     kawasan_tugas?: Prisma.StringNullableFilter<"Profile"> | string | null;
     reports?: Prisma.ReportListRelationFilter;
     votes?: Prisma.VoteListRelationFilter;
     status_history?: Prisma.StatusHistoryListRelationFilter;
-}, "id">;
+}, "id" | "email">;
 export type ProfileOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     nama?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
+    password?: Prisma.SortOrder;
     peran?: Prisma.SortOrder;
     kawasan_tugas?: Prisma.SortOrderInput | Prisma.SortOrder;
     _count?: Prisma.ProfileCountOrderByAggregateInput;
@@ -129,12 +151,16 @@ export type ProfileScalarWhereWithAggregatesInput = {
     NOT?: Prisma.ProfileScalarWhereWithAggregatesInput | Prisma.ProfileScalarWhereWithAggregatesInput[];
     id?: Prisma.UuidWithAggregatesFilter<"Profile"> | string;
     nama?: Prisma.StringWithAggregatesFilter<"Profile"> | string;
+    email?: Prisma.StringWithAggregatesFilter<"Profile"> | string;
+    password?: Prisma.StringWithAggregatesFilter<"Profile"> | string;
     peran?: Prisma.EnumPeranWithAggregatesFilter<"Profile"> | $Enums.Peran;
     kawasan_tugas?: Prisma.StringNullableWithAggregatesFilter<"Profile"> | string | null;
 };
 export type ProfileCreateInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     reports?: Prisma.ReportCreateNestedManyWithoutPelaporInput;
@@ -144,6 +170,8 @@ export type ProfileCreateInput = {
 export type ProfileUncheckedCreateInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     reports?: Prisma.ReportUncheckedCreateNestedManyWithoutPelaporInput;
@@ -153,6 +181,8 @@ export type ProfileUncheckedCreateInput = {
 export type ProfileUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     reports?: Prisma.ReportUpdateManyWithoutPelaporNestedInput;
@@ -162,6 +192,8 @@ export type ProfileUpdateInput = {
 export type ProfileUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     reports?: Prisma.ReportUncheckedUpdateManyWithoutPelaporNestedInput;
@@ -171,36 +203,48 @@ export type ProfileUncheckedUpdateInput = {
 export type ProfileCreateManyInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
 };
 export type ProfileUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type ProfileUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 };
 export type ProfileCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     nama?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
+    password?: Prisma.SortOrder;
     peran?: Prisma.SortOrder;
     kawasan_tugas?: Prisma.SortOrder;
 };
 export type ProfileMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     nama?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
+    password?: Prisma.SortOrder;
     peran?: Prisma.SortOrder;
     kawasan_tugas?: Prisma.SortOrder;
 };
 export type ProfileMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     nama?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
+    password?: Prisma.SortOrder;
     peran?: Prisma.SortOrder;
     kawasan_tugas?: Prisma.SortOrder;
 };
@@ -256,6 +300,8 @@ export type ProfileUpdateOneRequiredWithoutStatus_historyNestedInput = {
 export type ProfileCreateWithoutReportsInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     votes?: Prisma.VoteCreateNestedManyWithoutPendukungInput;
@@ -264,6 +310,8 @@ export type ProfileCreateWithoutReportsInput = {
 export type ProfileUncheckedCreateWithoutReportsInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     votes?: Prisma.VoteUncheckedCreateNestedManyWithoutPendukungInput;
@@ -285,6 +333,8 @@ export type ProfileUpdateToOneWithWhereWithoutReportsInput = {
 export type ProfileUpdateWithoutReportsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     votes?: Prisma.VoteUpdateManyWithoutPendukungNestedInput;
@@ -293,6 +343,8 @@ export type ProfileUpdateWithoutReportsInput = {
 export type ProfileUncheckedUpdateWithoutReportsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     votes?: Prisma.VoteUncheckedUpdateManyWithoutPendukungNestedInput;
@@ -301,6 +353,8 @@ export type ProfileUncheckedUpdateWithoutReportsInput = {
 export type ProfileCreateWithoutVotesInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     reports?: Prisma.ReportCreateNestedManyWithoutPelaporInput;
@@ -309,6 +363,8 @@ export type ProfileCreateWithoutVotesInput = {
 export type ProfileUncheckedCreateWithoutVotesInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     reports?: Prisma.ReportUncheckedCreateNestedManyWithoutPelaporInput;
@@ -330,6 +386,8 @@ export type ProfileUpdateToOneWithWhereWithoutVotesInput = {
 export type ProfileUpdateWithoutVotesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     reports?: Prisma.ReportUpdateManyWithoutPelaporNestedInput;
@@ -338,6 +396,8 @@ export type ProfileUpdateWithoutVotesInput = {
 export type ProfileUncheckedUpdateWithoutVotesInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     reports?: Prisma.ReportUncheckedUpdateManyWithoutPelaporNestedInput;
@@ -346,6 +406,8 @@ export type ProfileUncheckedUpdateWithoutVotesInput = {
 export type ProfileCreateWithoutStatus_historyInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     reports?: Prisma.ReportCreateNestedManyWithoutPelaporInput;
@@ -354,6 +416,8 @@ export type ProfileCreateWithoutStatus_historyInput = {
 export type ProfileUncheckedCreateWithoutStatus_historyInput = {
     id: string;
     nama: string;
+    email: string;
+    password: string;
     peran?: $Enums.Peran;
     kawasan_tugas?: string | null;
     reports?: Prisma.ReportUncheckedCreateNestedManyWithoutPelaporInput;
@@ -375,6 +439,8 @@ export type ProfileUpdateToOneWithWhereWithoutStatus_historyInput = {
 export type ProfileUpdateWithoutStatus_historyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     reports?: Prisma.ReportUpdateManyWithoutPelaporNestedInput;
@@ -383,6 +449,8 @@ export type ProfileUpdateWithoutStatus_historyInput = {
 export type ProfileUncheckedUpdateWithoutStatus_historyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     nama?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
     peran?: Prisma.EnumPeranFieldUpdateOperationsInput | $Enums.Peran;
     kawasan_tugas?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     reports?: Prisma.ReportUncheckedUpdateManyWithoutPelaporNestedInput;
@@ -413,6 +481,8 @@ export type ProfileCountOutputTypeCountStatus_historyArgs<ExtArgs extends runtim
 export type ProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     nama?: boolean;
+    email?: boolean;
+    password?: boolean;
     peran?: boolean;
     kawasan_tugas?: boolean;
     reports?: boolean | Prisma.Profile$reportsArgs<ExtArgs>;
@@ -423,22 +493,28 @@ export type ProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type ProfileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     nama?: boolean;
+    email?: boolean;
+    password?: boolean;
     peran?: boolean;
     kawasan_tugas?: boolean;
 }, ExtArgs["result"]["profile"]>;
 export type ProfileSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     nama?: boolean;
+    email?: boolean;
+    password?: boolean;
     peran?: boolean;
     kawasan_tugas?: boolean;
 }, ExtArgs["result"]["profile"]>;
 export type ProfileSelectScalar = {
     id?: boolean;
     nama?: boolean;
+    email?: boolean;
+    password?: boolean;
     peran?: boolean;
     kawasan_tugas?: boolean;
 };
-export type ProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nama" | "peran" | "kawasan_tugas", ExtArgs["result"]["profile"]>;
+export type ProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nama" | "email" | "password" | "peran" | "kawasan_tugas", ExtArgs["result"]["profile"]>;
 export type ProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     reports?: boolean | Prisma.Profile$reportsArgs<ExtArgs>;
     votes?: boolean | Prisma.Profile$votesArgs<ExtArgs>;
@@ -457,6 +533,8 @@ export type $ProfilePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: string;
         nama: string;
+        email: string;
+        password: string;
         peran: $Enums.Peran;
         kawasan_tugas: string | null;
     }, ExtArgs["result"]["profile"]>;
@@ -521,6 +599,8 @@ export interface Prisma__ProfileClient<T, Null = never, ExtArgs extends runtime.
 export interface ProfileFieldRefs {
     readonly id: Prisma.FieldRef<"Profile", 'String'>;
     readonly nama: Prisma.FieldRef<"Profile", 'String'>;
+    readonly email: Prisma.FieldRef<"Profile", 'String'>;
+    readonly password: Prisma.FieldRef<"Profile", 'String'>;
     readonly peran: Prisma.FieldRef<"Profile", 'Peran'>;
     readonly kawasan_tugas: Prisma.FieldRef<"Profile", 'String'>;
 }
