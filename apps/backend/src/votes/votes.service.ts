@@ -35,10 +35,12 @@ export class VotesService {
       throw error;
     }
 
-    const votesCount = await this.prisma.vote.count({
-      where: { report_id: reportId },
+    // votes_count dijaga trigger DB (JEK-21), bukan dihitung ulang di sini
+    const updated = await this.prisma.report.findUniqueOrThrow({
+      where: { id: reportId },
+      select: { votes_count: true },
     });
 
-    return { report_id: reportId, votes_count: votesCount };
+    return { report_id: reportId, votes_count: updated.votes_count };
   }
 }
