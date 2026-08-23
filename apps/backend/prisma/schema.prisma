@@ -5,6 +5,7 @@ generator client {
   provider        = "prisma-client"
   output          = "../generated/prisma"
   previewFeatures = ["postgresqlExtensions"]
+  moduleFormat    = "cjs"
 }
 
 datasource db {
@@ -46,6 +47,8 @@ enum StatusLaporan {
 model Profile {
   id            String  @id @db.Uuid
   nama          String
+  email         String  @unique
+  password      String
   peran         Peran   @default(warga)
   kawasan_tugas String?
 

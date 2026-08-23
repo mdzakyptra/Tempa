@@ -75,6 +75,8 @@ exports.TransactionIsolationLevel = runtime.makeStrictEnum({
 exports.ProfileScalarFieldEnum = {
     id: 'id',
     nama: 'nama',
+    email: 'email',
+    password: 'password',
     peran: 'peran',
     kawasan_tugas: 'kawasan_tugas'
 };

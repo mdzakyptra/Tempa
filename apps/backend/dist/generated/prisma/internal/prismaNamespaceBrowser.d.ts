@@ -28,6 +28,8 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export declare const ProfileScalarFieldEnum: {
     readonly id: "id";
     readonly nama: "nama";
+    readonly email: "email";
+    readonly password: "password";
     readonly peran: "peran";
     readonly kawasan_tugas: "kawasan_tugas";
 };
