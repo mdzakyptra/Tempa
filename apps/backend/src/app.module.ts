@@ -7,10 +7,11 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './auth/auth.module';
 import { VotesModule } from './votes/votes.module';
+import { StatusHistoryModule } from './status-history/status-history.module';
 
 
 @Module({
-  imports: [PrismaModule, AuthModule, VotesModule],
+  imports: [PrismaModule, AuthModule, VotesModule, StatusHistoryModule],
   controllers: [AppController],
   providers: [
     AppService,
