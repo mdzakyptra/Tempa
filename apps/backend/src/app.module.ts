@@ -6,10 +6,11 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './auth/auth.module';
+import { VotesModule } from './votes/votes.module';
 
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, VotesModule],
   controllers: [AppController],
   providers: [
     AppService,
