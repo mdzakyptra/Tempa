@@ -55,6 +55,7 @@ model Profile {
   reports        Report[]
   votes          Vote[]
   status_history StatusHistory[]
+  refresh_tokens RefreshToken[]
 
   @@map("profiles")
 }
@@ -129,4 +130,19 @@ model StatusHistory {
   petugas Profile @relation(fields: [diubah_oleh], references: [id])
 
   @@map("status_history")
+}
+
+//<---------- RefreshToken -------------->
+
+model RefreshToken {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  token_hash  String   @unique
+  kedaluwarsa DateTime
+  dibuat_pada DateTime @default(now())
+
+  pemilik Profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("refresh_tokens")
 }
