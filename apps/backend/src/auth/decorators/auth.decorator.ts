@@ -6,6 +6,8 @@ import { Roles } from './roles.decorator';
 import { Peran } from '../../../generated/prisma/client';
 
 
+// Modul yang pakai decorator ini wajib import AuthModule di imports-nya,
+// supaya JwtService bisa di-resolve DI untuk JwtAuthGuard.
 //<---------- Auth -------------->
 export const Auth = (...roles: Peran[]) => {
   return applyDecorators(
