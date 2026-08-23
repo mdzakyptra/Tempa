@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+enum Peran {
+  warga
+  petugas
+}
+
+enum TingkatBahaya {
+  rendah
+  sedang
+  tinggi
+  darurat
+}
+
+enum JenisKerusakan {
+  jalan
+  trotoar
+  lampu_jalan
+  drainase
+  jembatan
+  fasilitas_umum
+  lainnya
+}
+
+enum StatusLaporan {
+  menunggu
+  diproses
+  selesai
+  ditolak
+}
+
+//<---------- Profile -------------->
+
+model Profile {
+  id            String  @id @db.Uuid
+  nama          String
+  email         String  @unique
+  password      String
+  peran         Peran   @default(warga)
+  kawasan_tugas String?
+
+  reports        Report[]
+  votes          Vote[]
+  status_history StatusHistory[]
+  refresh_tokens RefreshToken[]
+
+  @@map("profiles")
+}
+
+//<---------- Report -------------->
+
+model Report {
+  id                 String                      @id @default(uuid()) @db.Uuid
+  judul              String
+  deskripsi          String
+  kawasan            String
+  jenis_kerusakan    JenisKerusakan
+  tingkat_bahaya     TingkatBahaya
+  estimasi_terdampak Int                         @default(0)
+  jalur_vital        Boolean                     @default(false)
+  votes_count        Int                         @default(0)
+  status             StatusLaporan               @default(menunggu)
+  dibuat_pada        DateTime                    @default(now())
+  dibuat_oleh        String                      @db.Uuid
+  embedding          Unsupported("vector(768)")?
+
+  pelapor        Profile         @relation(fields: [dibuat_oleh], references: [id])
+  photos         ReportPhoto[]
+  votes          Vote[]
+  status_history StatusHistory[]
+
+  @@index([kawasan])
+  @@index([jenis_kerusakan])
+  @@index([status])
+  @@index([dibuat_pada])
+  @@map("reports")
+}
+
+//<---------- ReportPhoto -------------->
+
+model ReportPhoto {
+  id        String @id @default(uuid()) @db.Uuid
+  report_id String @db.Uuid
+  url_foto  String
+
+  report Report @relation(fields: [report_id], references: [id], onDelete: Cascade)
+
+  @@map("report_photos")
+}
+
+//<---------- Vote -------------->
+
+model Vote {
+  id          String   @id @default(uuid()) @db.Uuid
+  report_id   String   @db.Uuid
+  user_id     String   @db.Uuid
+  dibuat_pada DateTime @default(now())
+
+  report    Report  @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  pendukung Profile @relation(fields: [user_id], references: [id])
+
+  @@unique([report_id, user_id])
+  @@map("votes")
+}
+
+//<---------- StatusHistory -------------->
+
+model StatusHistory {
+  id          String         @id @default(uuid()) @db.Uuid
+  report_id   String         @db.Uuid
+  status_lama StatusLaporan?
+  status_baru StatusLaporan
+  catatan     String?
+  diubah_oleh String         @db.Uuid
+  diubah_pada DateTime       @default(now())
+
+  report  Report  @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  petugas Profile @relation(fields: [diubah_oleh], references: [id])
+
+  @@map("status_history")
+}
+
+//<---------- RefreshToken -------------->
+
+model RefreshToken {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  token_hash  String   @unique
+  kedaluwarsa DateTime
+  dibuat_pada DateTime @default(now())
+
+  pemilik Profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("refresh_tokens")
+}
