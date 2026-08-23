@@ -71,6 +71,7 @@ model Report {
   tingkat_bahaya     TingkatBahaya
   estimasi_terdampak Int                         @default(0)
   jalur_vital        Boolean                     @default(false)
+  votes_count        Int                         @default(0)
   status             StatusLaporan               @default(menunggu)
   dibuat_pada        DateTime                    @default(now())
   dibuat_oleh        String                      @db.Uuid
