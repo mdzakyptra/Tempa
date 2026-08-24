@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -37,5 +45,14 @@ export class ReportsController {
   })
   findAll(@Query() query: ListReportsQueryDto) {
     return this.reportsService.findAll(query);
+  }
+
+  //<---------- findOne -------------->
+  @Get(':id')
+  @ApiStandardResponse(ReportListItemDto, {
+    description: 'Detail satu laporan beserta rincian skor',
+  })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.reportsService.findOne(id);
   }
 }
