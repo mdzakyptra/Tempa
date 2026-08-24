@@ -25,6 +25,24 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Rate limiting
+
+Ditegakkan lewat `@nestjs/throttler`, murni di backend. Frontend **dilarang** bikin polling sendiri buat menyiasati batas ini (arahan teknis proyek).
+
+| Endpoint | Batas | Catatan |
+|---|---|---|
+| Default (semua endpoint lain) | 100 request / 60 detik per IP | Batas global di `AppModule` |
+| `POST /auth/login` | 5 / 60 detik | Cegah brute force |
+| `POST /auth/register` | 5 / 60 detik | Cegah spam akun |
+| `POST /reports` | 10 / 60 detik | Cegah spam laporan |
+| `POST /votes` | 20 / 60 detik | Cegah spam vote |
+
+Kena limit → response `429 Too Many Requests`. Angka di atas masih bisa disesuaikan kalau ternyata kurang/kelebihan pas testing.
+
+## Validasi input
+
+`ValidationPipe` global (`main.ts`) dengan `whitelist: true` & `forbidNonWhitelisted: true` — field yang gak dikenal di DTO otomatis ditolak, gak perlu decorator manual per controller.
+
 ## Project setup
 
 ```bash

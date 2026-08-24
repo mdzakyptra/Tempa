@@ -8,6 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportResponseDto } from './dto/report-response.dto';
@@ -29,6 +30,7 @@ export class ReportsController {
   //<---------- create -------------->
   @Post()
   @OptionalAuth()
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiStandardResponse(ReportResponseDto, {
     description: 'Laporan berhasil dibuat',
   })
