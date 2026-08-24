@@ -5,6 +5,16 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 
+//<---------- buildCorsOrigins -------------->
+// Domain diizinkan diatur lewat CORS_ORIGINS (pisah koma) di .env — tinggal
+// tambahin domain produksi frontend (JEK-56) di sana pas udah final, tanpa
+// perlu ubah kode.
+function buildCorsOrigins(): string[] {
+  const origins = process.env.CORS_ORIGINS;
+  if (!origins) return ['http://localhost:5173'];
+  return origins.split(',').map((origin) => origin.trim());
+}
+
 //<---------- setupSwagger -------------->
 function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
@@ -21,6 +31,7 @@ function setupSwagger(app: INestApplication) {
 //<---------- bootstrap -------------->
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({ origin: buildCorsOrigins() });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
