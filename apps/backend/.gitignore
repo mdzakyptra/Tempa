@@ -6,6 +6,9 @@ dist
 .env.production
 .env.*.local
 
+
+
+
 /generated/prisma
 
 # Skill docs auto-installed by `prisma init`, not part of the project
