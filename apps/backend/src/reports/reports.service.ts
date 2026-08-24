@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -76,12 +76,43 @@ export class ReportsService {
         ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
         : Prisma.empty;
 
-    // Skor komponen jumlah_terdampak & lama_menunggu dinormalisasi relatif
-    // terhadap nilai tertinggi di hasil query saat itu (bukan skala absolut
-    // tetap) — belum ada patokan absolut yang disepakati tim, jadi laporan
-    // paling terdampak/paling lama nunggu di antrean saat itu selalu dapat
-    // porsi penuh buat komponen itu, sisanya proporsional.
     const rows = await this.prisma.$queryRaw<ReportScoredRow[]>`
+      ${this.scoredReportsCte()}
+      ${where}
+      ORDER BY skor DESC, dibuat_pada ASC
+    `;
+
+    return rows.map((row) => this.toListItem(row));
+  }
+
+  //<---------- findOne -------------->
+  async findOne(id: string) {
+    const rows = await this.prisma.$queryRaw<ReportScoredRow[]>`
+      ${this.scoredReportsCte()}
+      WHERE id = ${id}::uuid
+    `;
+
+    const row = rows[0];
+    if (!row) {
+      throw new NotFoundException('Laporan tidak ditemukan');
+    }
+
+    return this.toListItem(row);
+  }
+
+  //<---------- scoredReportsCte -------------->
+  // Query bersama dipakai findAll (JEK-14) & findOne (JEK-15) supaya rumus
+  // skor nggak dobel dan hasilnya selalu konsisten di kedua endpoint.
+  //
+  // Normalisasi komponen jumlah_terdampak & lama_menunggu sengaja dihitung
+  // relatif terhadap SELURUH laporan di tabel (window function tanpa WHERE
+  // di CTE ini) — bukan cuma hasil yang sudah difilter/dibatasi. Kalau
+  // normalisasi ikut kena filter, skor laporan yang sama bisa beda antara
+  // daftar (difilter kawasan) dan detail (cuma 1 baris, otomatis 100%),
+  // padahal kriteria JEK-15 minta angkanya konsisten. Filter/`WHERE id=`
+  // makanya ditempel oleh caller SETELAH CTE ini, bukan di dalamnya.
+  private scoredReportsCte(): Prisma.Sql {
+    return Prisma.sql`
       WITH mentah AS (
         SELECT
           id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
@@ -96,7 +127,6 @@ export class ReportsService {
           EXTRACT(EPOCH FROM (now() - dibuat_pada))::float8 AS detik_menunggu,
           (CASE WHEN jalur_vital THEN 1.0 ELSE 0.0 END)::float8 AS komponen_jalur_vital
         FROM reports
-        ${where}
       ),
       dinormalisasi AS (
         SELECT
@@ -119,10 +149,12 @@ export class ReportsService {
         ROUND((COALESCE(komponen_lama_menunggu, 0) * 100)::numeric, 2)::float8 AS skor_lama_menunggu,
         ROUND((komponen_jalur_vital * 100)::numeric, 2)::float8 AS skor_jalur_vital
       FROM dinormalisasi
-      ORDER BY skor DESC, dibuat_pada ASC
     `;
+  }
 
-    return rows.map((row) => ({
+  //<---------- toListItem -------------->
+  private toListItem(row: ReportScoredRow) {
+    return {
       id: row.id,
       judul: row.judul,
       deskripsi: row.deskripsi,
@@ -142,6 +174,6 @@ export class ReportsService {
         lama_menunggu: row.skor_lama_menunggu,
         jalur_vital: row.skor_jalur_vital,
       },
-    }));
+    };
   }
 }
