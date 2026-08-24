@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -98,6 +98,20 @@ export class AuthService {
       );
     }
 
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { token_hash: this.hashToken(refreshToken) },
+    });
+
+    if (
+      !stored ||
+      stored.user_id !== payload.sub ||
+      stored.kedaluwarsa < new Date()
+    ) {
+      throw new UnauthorizedException(
+        'Refresh token tidak valid atau sudah digunakan',
+      );
+    }
+
     const profile = await this.prisma.profile.findUnique({
       where: { id: payload.sub },
     });
@@ -106,20 +120,35 @@ export class AuthService {
       throw new UnauthorizedException('Akun tidak ditemukan');
     }
 
-    return this.generateTokens({
-      sub: profile.id,
-      email: profile.email,
-      peran: profile.peran,
-    });
-  }
+    await this.prisma.refreshToken.delete({ where: { id: stored.id } });
 
-  //<---------- buildAuthResponse -------------->
-  private buildAuthResponse(profile: ProfileForResponse) {
     const tokens = this.generateTokens({
       sub: profile.id,
       email: profile.email,
       peran: profile.peran,
     });
+
+    await this.persistRefreshToken(profile.id, tokens.refreshToken);
+
+    return tokens;
+  }
+
+  //<---------- logout -------------->
+  async logout(refreshToken: string): Promise<void> {
+    await this.prisma.refreshToken.deleteMany({
+      where: { token_hash: this.hashToken(refreshToken) },
+    });
+  }
+
+  //<---------- buildAuthResponse -------------->
+  private async buildAuthResponse(profile: ProfileForResponse) {
+    const tokens = this.generateTokens({
+      sub: profile.id,
+      email: profile.email,
+      peran: profile.peran,
+    });
+
+    await this.persistRefreshToken(profile.id, tokens.refreshToken);
 
     return {
       ...tokens,
@@ -133,17 +162,42 @@ export class AuthService {
     };
   }
 
+  //<---------- persistRefreshToken -------------->
+  private async persistRefreshToken(userId: string, refreshToken: string) {
+    const decoded = this.jwtService.decode<{ exp: number }>(refreshToken);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        id: randomUUID(),
+        user_id: userId,
+        token_hash: this.hashToken(refreshToken),
+        kedaluwarsa: new Date(decoded.exp * 1000),
+      },
+    });
+  }
+
+  //<---------- hashToken -------------->
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
   //<---------- generateTokens -------------->
   private generateTokens(payload: JwtPayload): TokenPair {
-    const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN ?? '15m') as ExpiresIn,
-    });
+    const accessToken = this.jwtService.sign(
+      { ...payload, jti: randomUUID() },
+      {
+        secret: process.env.JWT_ACCESS_SECRET,
+        expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN ?? '15m') as ExpiresIn,
+      },
+    );
 
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as ExpiresIn,
-    });
+    const refreshToken = this.jwtService.sign(
+      { ...payload, jti: randomUUID() },
+      {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as ExpiresIn,
+      },
+    );
 
     return { accessToken, refreshToken };
   }

@@ -55,6 +55,7 @@ model Profile {
   reports        Report[]
   votes          Vote[]
   status_history StatusHistory[]
+  refresh_tokens RefreshToken[]
 
   @@map("profiles")
 }
@@ -70,20 +71,28 @@ model Report {
   tingkat_bahaya     TingkatBahaya
   estimasi_terdampak Int                         @default(0)
   jalur_vital        Boolean                     @default(false)
+  votes_count        Int                         @default(0)
   status             StatusLaporan               @default(menunggu)
   dibuat_pada        DateTime                    @default(now())
-  dibuat_oleh        String                      @db.Uuid
+  dibuat_oleh        String?                     @db.Uuid
+  digabung_ke_id     String?                     @db.Uuid
   embedding          Unsupported("vector(768)")?
 
-  pelapor        Profile         @relation(fields: [dibuat_oleh], references: [id])
+  pelapor        Profile?        @relation(fields: [dibuat_oleh], references: [id])
   photos         ReportPhoto[]
   votes          Vote[]
   status_history StatusHistory[]
+
+  // Laporan duplikat (JEK-18) disimpan sebagai referensi ke laporan utama,
+  // bukan dihapus — biar riwayat/foto/votes-nya nggak hilang.
+  digabung_ke   Report?  @relation("ReportDuplikat", fields: [digabung_ke_id], references: [id])
+  duplikat_dari Report[] @relation("ReportDuplikat")
 
   @@index([kawasan])
   @@index([jenis_kerusakan])
   @@index([status])
   @@index([dibuat_pada])
+  @@index([digabung_ke_id])
   @@map("reports")
 }
 
@@ -129,4 +138,19 @@ model StatusHistory {
   petugas Profile @relation(fields: [diubah_oleh], references: [id])
 
   @@map("status_history")
+}
+
+//<---------- RefreshToken -------------->
+
+model RefreshToken {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  token_hash  String   @unique
+  kedaluwarsa DateTime
+  dibuat_pada DateTime @default(now())
+
+  pemilik Profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("refresh_tokens")
 }
