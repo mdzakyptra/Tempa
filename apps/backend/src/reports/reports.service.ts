@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ListReportsQueryDto } from './dto/list-reports-query.dto';
+import { FindSimilarQueryDto } from './dto/find-similar-query.dto';
 import { KAWASAN_JALUR_VITAL } from './constants/jalur-vital.constant';
 import {
   BOBOT_BAHAYA,
@@ -98,6 +99,27 @@ export class ReportsService {
     }
 
     return this.toListItem(row);
+  }
+
+  //<---------- findSimilar -------------->
+  // Keputusan desain (didokumentasikan sesuai instruksi tiket JEK-17, perlu
+  // dikonfirmasi ke tim):
+  // 1. Radius pencarian pakai kesamaan `kawasan` (persis sama) sebagai proxy —
+  //    skema `reports` belum punya kolom koordinat/lat-lng, jadi jarak
+  //    geografis beneran belum bisa dihitung (limitasi sama kayak jalur_vital
+  //    di JEK-13). Ganti ke radius koordinat begitu data lokasi presisi ada.
+  // 2. Laporan berstatus `selesai` atau `ditolak` DIKECUALIKAN dari saran —
+  //    laporan yang udah kelar/ditolak nggak relevan buat digabung, warga
+  //    cuma perlu disarankan gabung ke laporan yang masih aktif ditangani.
+  async findSimilar(query: FindSimilarQueryDto) {
+    return this.prisma.report.findMany({
+      where: {
+        kawasan: query.kawasan,
+        jenis_kerusakan: query.jenis_kerusakan,
+        status: { notIn: [StatusLaporan.selesai, StatusLaporan.ditolak] },
+      },
+      orderBy: { dibuat_pada: 'desc' },
+    });
   }
 
   //<---------- scoredReportsCte -------------->
