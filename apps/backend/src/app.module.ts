@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { VotesModule } from './votes/votes.module';
 import { StatusHistoryModule } from './status-history/status-history.module';
 import { ReportsModule } from './reports/reports.module';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 
 // Batas default (global). Endpoint sensitif override lewat @Throttle() sendiri
@@ -24,6 +25,7 @@ import { ReportsModule } from './reports/reports.module';
     VotesModule,
     StatusHistoryModule,
     ReportsModule,
+    AiAssistantModule,
   ],
   controllers: [AppController, HealthController],
   providers: [
