@@ -1,8 +1,10 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportResponseDto } from './dto/report-response.dto';
+import { ListReportsQueryDto } from './dto/list-reports-query.dto';
+import { ReportListItemDto } from './dto/report-list-item.dto';
 import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -25,5 +27,15 @@ export class ReportsController {
     @Body() dto: CreateReportDto,
   ) {
     return this.reportsService.create(dto, user?.sub);
+  }
+
+  //<---------- findAll -------------->
+  @Get()
+  @ApiStandardResponse(ReportListItemDto, {
+    isArray: true,
+    description: 'Daftar laporan terurut skor prioritas, tertinggi dulu',
+  })
+  findAll(@Query() query: ListReportsQueryDto) {
+    return this.reportsService.findAll(query);
   }
 }
