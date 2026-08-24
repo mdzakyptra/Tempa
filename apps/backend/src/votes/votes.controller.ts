@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteResponseDto } from './dto/vote-response.dto';
@@ -21,6 +22,7 @@ export class VotesController {
   //<---------- create -------------->
   @Post()
   @Auth()
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @ApiStandardResponse(VoteResponseDto, {
     description: 'Berhasil mendukung laporan',
   })
