@@ -74,10 +74,10 @@ model Report {
   votes_count        Int                         @default(0)
   status             StatusLaporan               @default(menunggu)
   dibuat_pada        DateTime                    @default(now())
-  dibuat_oleh        String                      @db.Uuid
+  dibuat_oleh        String?                     @db.Uuid
   embedding          Unsupported("vector(768)")?
 
-  pelapor        Profile         @relation(fields: [dibuat_oleh], references: [id])
+  pelapor        Profile?        @relation(fields: [dibuat_oleh], references: [id])
   photos         ReportPhoto[]
   votes          Vote[]
   status_history StatusHistory[]
