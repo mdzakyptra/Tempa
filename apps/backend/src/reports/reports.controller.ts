@@ -12,6 +12,7 @@ import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportResponseDto } from './dto/report-response.dto';
 import { ListReportsQueryDto } from './dto/list-reports-query.dto';
+import { FindSimilarQueryDto } from './dto/find-similar-query.dto';
 import { ReportListItemDto } from './dto/report-list-item.dto';
 import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -45,6 +46,18 @@ export class ReportsController {
   })
   findAll(@Query() query: ListReportsQueryDto) {
     return this.reportsService.findAll(query);
+  }
+
+  //<---------- findSimilar -------------->
+  // Wajib didaftar sebelum findOne(':id') di controller ini, supaya
+  // "/reports/similar" nggak ketangkep router sebagai ParseUUIDPipe(':id').
+  @Get('similar')
+  @ApiStandardResponse(ReportResponseDto, {
+    isArray: true,
+    description: 'Laporan existing yang kawasan & jenis kerusakannya cocok',
+  })
+  findSimilar(@Query() query: FindSimilarQueryDto) {
+    return this.reportsService.findSimilar(query);
   }
 
   //<---------- findOne -------------->
