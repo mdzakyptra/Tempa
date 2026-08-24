@@ -13,6 +13,7 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { ReportResponseDto } from './dto/report-response.dto';
 import { ListReportsQueryDto } from './dto/list-reports-query.dto';
 import { FindSimilarQueryDto } from './dto/find-similar-query.dto';
+import { MergeReportDto } from './dto/merge-report.dto';
 import { ReportListItemDto } from './dto/report-list-item.dto';
 import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -67,5 +68,18 @@ export class ReportsController {
   })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.reportsService.findOne(id);
+  }
+
+  //<---------- merge -------------->
+  @Post(':id/merge')
+  @OptionalAuth()
+  @ApiStandardResponse(ReportResponseDto, {
+    description: 'Laporan berhasil ditautkan sebagai duplikat',
+  })
+  merge(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MergeReportDto,
+  ) {
+    return this.reportsService.merge(id, dto);
   }
 }
