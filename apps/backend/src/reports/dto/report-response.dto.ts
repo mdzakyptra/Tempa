@@ -42,4 +42,11 @@ export class ReportResponseDto {
 
   @ApiProperty({ nullable: true, example: null })
   dibuat_oleh: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    example: null,
+    description: 'id laporan utama kalau ini sudah jadi duplikat (JEK-18)',
+  })
+  digabung_ke_id: string | null;
 }

@@ -75,6 +75,7 @@ model Report {
   status             StatusLaporan               @default(menunggu)
   dibuat_pada        DateTime                    @default(now())
   dibuat_oleh        String?                     @db.Uuid
+  digabung_ke_id     String?                     @db.Uuid
   embedding          Unsupported("vector(768)")?
 
   pelapor        Profile?        @relation(fields: [dibuat_oleh], references: [id])
@@ -82,10 +83,16 @@ model Report {
   votes          Vote[]
   status_history StatusHistory[]
 
+  // Laporan duplikat (JEK-18) disimpan sebagai referensi ke laporan utama,
+  // bukan dihapus — biar riwayat/foto/votes-nya nggak hilang.
+  digabung_ke   Report?  @relation("ReportDuplikat", fields: [digabung_ke_id], references: [id])
+  duplikat_dari Report[] @relation("ReportDuplikat")
+
   @@index([kawasan])
   @@index([jenis_kerusakan])
   @@index([status])
   @@index([dibuat_pada])
+  @@index([digabung_ke_id])
   @@map("reports")
 }
 

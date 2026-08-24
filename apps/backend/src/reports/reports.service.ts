@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ListReportsQueryDto } from './dto/list-reports-query.dto';
 import { FindSimilarQueryDto } from './dto/find-similar-query.dto';
+import { MergeReportDto } from './dto/merge-report.dto';
 import { KAWASAN_JALUR_VITAL } from './constants/jalur-vital.constant';
 import {
   BOBOT_BAHAYA,
@@ -117,8 +123,82 @@ export class ReportsService {
         kawasan: query.kawasan,
         jenis_kerusakan: query.jenis_kerusakan,
         status: { notIn: [StatusLaporan.selesai, StatusLaporan.ditolak] },
+        digabung_ke_id: null,
       },
       orderBy: { dibuat_pada: 'desc' },
+    });
+  }
+
+  //<---------- merge -------------->
+  // Keputusan desain JEK-18 (didokumentasikan sesuai instruksi tiket):
+  // 1. Laporan duplikat DISIMPAN sebagai referensi (kolom digabung_ke_id),
+  //    bukan dihapus — riwayat & foto (report_photos) tetap utuh nempel di
+  //    baris aslinya, cuma dikeluarkan dari daftar aktif (lihat WHERE di
+  //    scoredReportsCte). Konsekuensinya: GET /reports/:id buat laporan yang
+  //    sudah digabung akan 404, karena dia sengaja dikeluarkan dari query
+  //    skor bersama — bukan hilang datanya, cuma nggak lagi dianggap "aktif".
+  // 2. Vote di laporan duplikat DIPINDAH ke laporan utama (bukan dihitung
+  //    ulang manual), supaya trigger votes_count (JEK-21) tetap jadi satu
+  //    sumber kebenaran. Kalau user yang sama udah vote di laporan utama
+  //    juga, vote duplikatnya cuma dihapus (bukan dipindah) buat menghindari
+  //    duplikat dukungan dari satu orang.
+  async merge(duplicateId: string, dto: MergeReportDto) {
+    const primaryId = dto.laporan_utama_id;
+
+    if (duplicateId === primaryId) {
+      throw new BadRequestException(
+        'Laporan tidak bisa digabung ke dirinya sendiri',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const [duplicate, primary] = await Promise.all([
+        tx.report.findUnique({ where: { id: duplicateId } }),
+        tx.report.findUnique({ where: { id: primaryId } }),
+      ]);
+
+      if (!duplicate) {
+        throw new NotFoundException('Laporan yang mau digabung tidak ditemukan');
+      }
+      if (!primary) {
+        throw new NotFoundException('Laporan utama tujuan gabung tidak ditemukan');
+      }
+      if (duplicate.digabung_ke_id) {
+        throw new ConflictException('Laporan ini sudah pernah digabung sebelumnya');
+      }
+      if (primary.digabung_ke_id) {
+        throw new ConflictException(
+          'Laporan tujuan sudah jadi duplikat laporan lain — gabung langsung ke laporan utamanya',
+        );
+      }
+
+      const votesDuplikat = await tx.vote.findMany({
+        where: { report_id: duplicateId },
+      });
+      const votesPrimary = await tx.vote.findMany({
+        where: { report_id: primaryId },
+        select: { user_id: true },
+      });
+      const userSudahVotePrimary = new Set(votesPrimary.map((v) => v.user_id));
+
+      for (const vote of votesDuplikat) {
+        await tx.vote.delete({ where: { id: vote.id } });
+        if (!userSudahVotePrimary.has(vote.user_id)) {
+          await tx.vote.create({
+            data: {
+              id: randomUUID(),
+              report_id: primaryId,
+              user_id: vote.user_id,
+              dibuat_pada: vote.dibuat_pada,
+            },
+          });
+        }
+      }
+
+      return tx.report.update({
+        where: { id: duplicateId },
+        data: { digabung_ke_id: primaryId },
+      });
     });
   }
 
@@ -149,6 +229,7 @@ export class ReportsService {
           EXTRACT(EPOCH FROM (now() - dibuat_pada))::float8 AS detik_menunggu,
           (CASE WHEN jalur_vital THEN 1.0 ELSE 0.0 END)::float8 AS komponen_jalur_vital
         FROM reports
+        WHERE digabung_ke_id IS NULL
       ),
       dinormalisasi AS (
         SELECT
