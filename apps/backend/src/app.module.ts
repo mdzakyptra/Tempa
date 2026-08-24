@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './auth/auth.module';
 import { VotesModule } from './votes/votes.module';
@@ -27,6 +28,7 @@ import { ReportsModule } from './reports/reports.module';
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
   ],

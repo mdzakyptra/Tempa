@@ -4,6 +4,7 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ApiErrorResponseDto } from '../dto/api-error-response.dto';
@@ -11,6 +12,8 @@ import { ApiErrorResponseDto } from '../dto/api-error-response.dto';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger('ExceptionFilter');
+
   //<---------- catch -------------->
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -21,6 +24,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    // Stack trace & detail internal cuma di log di server, gak pernah dikirim ke client.
+    if (Number(statusCode) === Number(HttpStatus.INTERNAL_SERVER_ERROR)) {
+      this.logger.error(
+        `${request.method} ${request.url}`,
+        exception instanceof Error ? exception.stack : String(exception),
+      );
+    }
 
     const errorResponse: ApiErrorResponseDto = {
       success: false,
