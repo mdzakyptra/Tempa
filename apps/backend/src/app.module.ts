@@ -16,8 +16,6 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 import { PhotosModule } from './photos/photos.module';
 
 
-// Batas default (global). Endpoint sensitif override lewat @Throttle() sendiri
-// (lihat auth, reports, votes controller) — lihat README backend untuk daftarnya.
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
