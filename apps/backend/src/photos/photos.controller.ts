@@ -12,7 +12,6 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ApiStandardResponse } from '../common/decorators/api-standard-response.decorator';
 
 
-
 @ApiTags('Photos')
 @Controller('photos')
 export class PhotosController {

@@ -3,7 +3,10 @@ import { ReportsService } from '../reports/reports.service';
 import { AskQuestionDto } from './dto/ask-question.dto';
 
 
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// llama-3.3-70b-versatile udah di-deprecate Groq (404 model_not_found per
+// 27 Agustus 2026) — diganti openai/gpt-oss-120b, model chat paling besar
+// yang masih aktif di daftar model Groq buat akun ini.
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `Kamu asisten tanya jawab untuk aplikasi "Antrean Kota", yang menampilkan antrean perbaikan infrastruktur kota terurut skor prioritas.
