@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 
@@ -31,6 +32,22 @@ function setupSwagger(app: INestApplication) {
 //<---------- bootstrap -------------->
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // CSP dilonggarin buat script/style inline yang dipakai Swagger UI (JEK-9) —
+  // rekomendasi resmi NestJS docs (docs.nestjs.com/security/helmet).
+  // Foto laporan gak lewat sini sama sekali (dilayani langsung dari S3/CDN,
+  // lihat photos.service.ts), jadi crossOriginResourcePolicy default aman.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: [`'self'`],
+          styleSrc: [`'self'`, `'unsafe-inline'`],
+          imgSrc: [`'self'`, 'data:'],
+          scriptSrc: [`'self'`, `'unsafe-inline'`],
+        },
+      },
+    }),
+  );
   app.enableCors({ origin: buildCorsOrigins() });
   app.useGlobalPipes(
     new ValidationPipe({

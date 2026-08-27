@@ -9,6 +9,7 @@ import {
   TingkatBahaya,
 } from '../generated/prisma/client';
 
+
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
