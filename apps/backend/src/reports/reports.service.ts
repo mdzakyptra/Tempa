@@ -17,6 +17,8 @@ import {
   BOBOT_LAMA_MENUNGGU,
   BOBOT_JALUR_VITAL,
 } from './constants/skor-bobot.constant';
+import { SIMILARITY_THRESHOLD } from './constants/embedding.constant';
+import { GeminiEmbeddingService } from './gemini-embedding.service';
 import {
   Prisma,
   JenisKerusakan,
@@ -46,13 +48,36 @@ interface ReportScoredRow {
   skor_jalur_vital: number;
 }
 
+// Baris mentah hasil query kemiripan (JEK-17 + JEK-19 digabung).
+export interface ReportSimilarRow {
+  id: string;
+  judul: string;
+  deskripsi: string;
+  kawasan: string;
+  jenis_kerusakan: JenisKerusakan;
+  tingkat_bahaya: TingkatBahaya;
+  estimasi_terdampak: number;
+  jalur_vital: boolean;
+  votes_count: number;
+  status: StatusLaporan;
+  dibuat_pada: Date;
+  dibuat_oleh: string | null;
+  digabung_ke_id: string | null;
+  kemiripan: number | null;
+  cocok_atribut: boolean;
+  cocok_embedding: boolean;
+}
+
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly embeddingService: GeminiEmbeddingService,
+  ) {}
 
   //<---------- create -------------->
   async create(dto: CreateReportDto, userId?: string) {
-    return this.prisma.report.create({
+    const report = await this.prisma.report.create({
       data: {
         id: randomUUID(),
         judul: dto.judul,
@@ -65,6 +90,27 @@ export class ReportsService {
         dibuat_oleh: userId,
       },
     });
+
+    // Sekali per laporan, pas dibuat — bukan dihitung ulang tiap kali
+    // deteksi duplikat dipanggil (JEK-19). Sengaja di-await di sini (bukan
+    // fire-and-forget) biar kriteria "embedding tersimpan setiap laporan
+    // baru dibuat" pasti kepenuhi; kalau Gemini lagi down, embedding cuma
+    // tetap null (lihat GeminiEmbeddingService) — create laporan TETAP
+    // sukses, gak boleh gagal gara-gara AI down.
+    await this.storeEmbedding(report.id, `${dto.judul} ${dto.deskripsi}`);
+
+    return report;
+  }
+
+  //<---------- storeEmbedding -------------->
+  private async storeEmbedding(reportId: string, text: string): Promise<void> {
+    const vector = await this.embeddingService.embed(text);
+    if (!vector) return;
+
+    const literal = `[${vector.join(',')}]`;
+    await this.prisma.$executeRaw`
+      UPDATE reports SET embedding = ${literal}::vector WHERE id = ${reportId}::uuid
+    `;
   }
 
   //<---------- findAll -------------->
@@ -108,25 +154,78 @@ export class ReportsService {
   }
 
   //<---------- findSimilar -------------->
-  // Keputusan desain (didokumentasikan sesuai instruksi tiket JEK-17, perlu
-  // dikonfirmasi ke tim):
-  // 1. Radius pencarian pakai kesamaan `kawasan` (persis sama) sebagai proxy —
-  //    skema `reports` belum punya kolom koordinat/lat-lng, jadi jarak
+  // Keputusan desain (didokumentasikan sesuai instruksi tiket JEK-17/JEK-19,
+  // perlu dikonfirmasi ke tim):
+  // 1. Radius pencarian atribut pakai kesamaan `kawasan` (persis sama) sebagai
+  //    proxy — skema `reports` belum punya kolom koordinat/lat-lng, jadi jarak
   //    geografis beneran belum bisa dihitung (limitasi sama kayak jalur_vital
   //    di JEK-13). Ganti ke radius koordinat begitu data lokasi presisi ada.
   // 2. Laporan berstatus `selesai` atau `ditolak` DIKECUALIKAN dari saran —
   //    laporan yang udah kelar/ditolak nggak relevan buat digabung, warga
   //    cuma perlu disarankan gabung ke laporan yang masih aktif ditangani.
-  async findSimilar(query: FindSimilarQueryDto) {
-    return this.prisma.report.findMany({
-      where: {
+  // 3. `judul`/`deskripsi` opsional (lihat FindSimilarQueryDto) — kalau
+  //    dikirim, hasil atribut (JEK-17) DIGABUNG sama hasil kemiripan makna
+  //    embedding (JEK-19) dalam satu response, ditandai cocok_atribut /
+  //    cocok_embedding per kandidat, dan diurut dari paling mirip. Kalau
+  //    nggak dikirim (caller lama), jalan kayak semula — atribut doang,
+  //    kemiripan selalu null.
+  async findSimilar(query: FindSimilarQueryDto): Promise<ReportSimilarRow[]> {
+    if (!query.judul || !query.deskripsi) {
+      const rows = await this.prisma.report.findMany({
+        where: {
+          kawasan: query.kawasan,
+          jenis_kerusakan: query.jenis_kerusakan,
+          status: { notIn: [StatusLaporan.selesai, StatusLaporan.ditolak] },
+          digabung_ke_id: null,
+        },
+        orderBy: { dibuat_pada: 'desc' },
+      });
+      return rows.map((r) => ({
+        ...r,
+        kemiripan: null,
+        cocok_atribut: true,
+        cocok_embedding: false,
+      }));
+    }
+
+    const vector = await this.embeddingService.embed(
+      `${query.judul} ${query.deskripsi}`,
+    );
+
+    // Gemini lagi down/key belum diset — jangan gagalin deteksi duplikat
+    // sepenuhnya, mundur ke pencocokan atribut doang (JEK-17).
+    if (!vector) {
+      return this.findSimilar({
         kawasan: query.kawasan,
         jenis_kerusakan: query.jenis_kerusakan,
-        status: { notIn: [StatusLaporan.selesai, StatusLaporan.ditolak] },
-        digabung_ke_id: null,
-      },
-      orderBy: { dibuat_pada: 'desc' },
-    });
+      });
+    }
+
+    const literal = `[${vector.join(',')}]`;
+    return this.prisma.$queryRaw<ReportSimilarRow[]>`
+      SELECT
+        id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
+        estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada,
+        dibuat_oleh, digabung_ke_id,
+        (kawasan = ${query.kawasan}
+          AND jenis_kerusakan = ${query.jenis_kerusakan}::"JenisKerusakan") AS cocok_atribut,
+        (embedding IS NOT NULL
+          AND (1 - (embedding <=> ${literal}::vector)) >= ${SIMILARITY_THRESHOLD}) AS cocok_embedding,
+        CASE WHEN embedding IS NOT NULL
+          THEN ROUND((1 - (embedding <=> ${literal}::vector))::numeric, 4)::float8
+          ELSE NULL
+        END AS kemiripan
+      FROM reports
+      WHERE digabung_ke_id IS NULL
+        AND status NOT IN ('selesai', 'ditolak')
+        AND (
+          (kawasan = ${query.kawasan}
+            AND jenis_kerusakan = ${query.jenis_kerusakan}::"JenisKerusakan")
+          OR (embedding IS NOT NULL
+            AND (1 - (embedding <=> ${literal}::vector)) >= ${SIMILARITY_THRESHOLD})
+        )
+      ORDER BY kemiripan DESC NULLS LAST, dibuat_pada DESC
+    `;
   }
 
   //<---------- merge -------------->
