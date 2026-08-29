@@ -22,6 +22,8 @@ import {
 import { CreatePresignedUploadDto } from './dto/create-presigned-upload.dto';
 import { PresignedUploadResponseDto } from './dto/presigned-upload-response.dto';
 import { AddReportPhotosDto } from './dto/add-report-photos.dto';
+import { ListReportPhotosDto } from './dto/list-report-photos.dto';
+import { ReportPhotoResponseDto } from './dto/report-photo-response.dto';
 
 
 @Injectable()
@@ -93,6 +95,24 @@ export class PhotosService {
     }));
 
     return this.prisma.reportPhoto.createManyAndReturn({ data });
+  }
+
+  //<---------- listByReport -------------->
+  // Belum ada di tiket manapun (celah dari JEK-33: "foto laporan" disebut di
+  // deskripsinya tapi nggak pernah dipecah jadi tiket sendiri kayak
+  // komponen lain) — endpoint ini yang bikin foto (JEK-22/23) bisa
+  // ditampilkan balik di halaman Detail Laporan.
+  async listByReport(dto: ListReportPhotosDto): Promise<ReportPhotoResponseDto[]> {
+    const report = await this.prisma.report.findUnique({
+      where: { id: dto.reportId },
+    });
+    if (!report) {
+      throw new NotFoundException('Laporan tidak ditemukan');
+    }
+
+    return this.prisma.reportPhoto.findMany({
+      where: { report_id: dto.reportId },
+    });
   }
 
   //<---------- verifyUploadedObject -------------->

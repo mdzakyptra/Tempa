@@ -1,10 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { PhotosService } from './photos.service';
 import { CreatePresignedUploadDto } from './dto/create-presigned-upload.dto';
 import { PresignedUploadResponseDto } from './dto/presigned-upload-response.dto';
 import { AddReportPhotosDto } from './dto/add-report-photos.dto';
+import { ListReportPhotosDto } from './dto/list-report-photos.dto';
 import { ReportPhotoResponseDto } from './dto/report-photo-response.dto';
 import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -26,6 +27,20 @@ export class PhotosController {
   })
   createPresignedUpload(@Body() dto: CreatePresignedUploadDto) {
     return this.photosService.createPresignedUpload(dto);
+  }
+
+  //<---------- listByReport -------------->
+  // Celah dari JEK-33 ("foto laporan" kesebut di deskripsi, nggak pernah
+  // dipecah jadi tiket sendiri) — dipakai buat nampilin foto balik di
+  // halaman Detail Laporan.
+  @Get()
+  @OptionalAuth()
+  @ApiStandardResponse(ReportPhotoResponseDto, {
+    isArray: true,
+    description: 'Daftar foto milik satu laporan',
+  })
+  listByReport(@Query() dto: ListReportPhotosDto) {
+    return this.photosService.listByReport(dto);
   }
 
   //<---------- attachToReport -------------->
