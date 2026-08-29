@@ -2,7 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 
 const navItems = [
-  { to: '/', label: 'Beranda' },
+  { to: '/antrean', label: 'Antrean' },
   { to: '/lapor-baru', label: 'Lapor Baru' },
   { to: '/metodologi', label: 'Metodologi' },
   { to: '/auth', label: 'Masuk' },
