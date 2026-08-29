@@ -11,8 +11,6 @@ export interface ZoomOptions {
 
 export interface WireframeDottedGlobeHandle {
   zoomIn: (focus?: [number, number], options?: ZoomOptions) => void
-  /** Zoom to an exact absolute scale (not relative to base radius) — used to drill into a cluster by a precomputed amount. */
-  zoomToScale: (focus: [number, number], scale: number, options?: Omit<ZoomOptions, 'scaleMultiplier'>) => void
   /** Animate back to the default Indonesia-centered view. */
   reset: (options?: Omit<ZoomOptions, 'scaleMultiplier'>) => void
 }
@@ -78,13 +76,8 @@ export function useGlobeZoomHandle({
       animateTo(baseRadiusRef.current * scaleMultiplier, toRotate, rest)
     }
 
-    const zoomToScale: WireframeDottedGlobeHandle['zoomToScale'] = (focus, scale, options) => {
-      animateTo(scale, [-focus[0], -focus[1], 0], options)
-    }
-
     return {
       zoomIn,
-      zoomToScale,
       reset: (options = {}) => zoomIn(INDONESIA_CENTER, { ...options, scaleMultiplier: INITIAL_ZOOM }),
     }
   })
