@@ -6,8 +6,7 @@ import WireframeDottedGlobe, {
   type GlobeZone,
   type GlobeZoneCluster,
 } from '@/components/ui/wireframe-dotted-globe'
-import { scaleToSeparate } from '@/components/ui/globe-interactions'
-import { CityMap, type CityMapMarker } from '@/components/city-map'
+import { CityMap, type CityMapMarker, type CityMapZone } from '@/components/city-map'
 import { searchLocationID, type GeocodeResult } from '@/lib/geocode'
 import { apiFetch } from '@/lib/api'
 import type { ReportListItem } from '@/components/report-card'
@@ -17,7 +16,9 @@ interface MapTarget {
   center: [number, number]
   zoom: number
   markers: CityMapMarker[]
-  /** Set only for a zone dive — shows a "lihat semua di Antrean" link under the map. */
+  /** Set only for a zone dive — per-kawasan hotzone circles, clicked to reveal real markers. */
+  zones?: CityMapZone[]
+  /** Set only when a zone dive lands on a single kawasan — shows a "lihat semua di Antrean" link. */
   kawasan?: string
 }
 
@@ -130,28 +131,30 @@ export default function GlobeMapTransition() {
   }
 
   //<---------- handleZoneClick -------------->
-  // A cluster still holding more than one kawasan (too close together to tell
-  // apart at this zoom) drills straight to the exact scale that separates its
-  // closest pair — one click, not a guessed multiplier the user has to retry.
-  // Only a lone kawasan actually dives into the embedded map with its markers.
+  // One zoom, straight into the embedded map — the hotzone's member kawasan
+  // (still merged at globe scale, or just one) become transparent circles
+  // sized by report count over the real streets, not individual pins. Only
+  // clicking a circle reveals its actual coordinates (see CityMap).
   function handleZoneClick(cluster: GlobeZoneCluster) {
-    if (cluster.members.length > 1) {
-      const targetScale = scaleToSeparate(cluster)
-      if (targetScale) globeRef.current?.zoomToScale([cluster.lng, cluster.lat], targetScale, { duration: TRANSITION_MS })
-      return
-    }
-
-    const zone = cluster.members[0]
+    const kawasanInCluster = new Set(cluster.members.map((member) => member.kawasan))
     const markers: CityMapMarker[] = (reports ?? [])
       .filter((r): r is ReportListItem & { lat: number; lng: number } => r.lat !== null && r.lng !== null)
-      .filter((r) => r.kawasan === zone.kawasan)
-      .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul }))
+      .filter((r) => kawasanInCluster.has(r.kawasan))
+      .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul, kawasan: r.kawasan }))
 
-    diveTo(zone.lng, zone.lat, ZONE_ZOOM_MULTIPLIER, {
-      center: [zone.lat, zone.lng],
+    const zones: CityMapZone[] = cluster.members.map((member) => ({
+      kawasan: member.kawasan,
+      lat: member.lat,
+      lng: member.lng,
+      count: member.count,
+    }))
+
+    diveTo(cluster.lng, cluster.lat, ZONE_ZOOM_MULTIPLIER, {
+      center: [cluster.lat, cluster.lng],
       zoom: 13,
       markers,
-      kawasan: zone.kawasan,
+      zones,
+      kawasan: cluster.members.length === 1 ? cluster.members[0].kawasan : undefined,
     })
   }
 
@@ -219,6 +222,7 @@ export default function GlobeMapTransition() {
           >
             <CityMap
               markers={mapTarget.markers}
+              zones={mapTarget.zones}
               center={mapTarget.center}
               zoom={mapTarget.zoom}
               onMarkerClick={(marker) => navigate(`/laporan/${marker.id}`)}

@@ -68,29 +68,6 @@ export function clusterZones(zones: GlobeZone[], projection: d3.GeoProjection): 
   }))
 }
 
-//<---------- scaleToSeparate -------------->
-// Absolute projection scale (not a multiplier) needed so the CLOSEST pair of
-// kawasan in this cluster ends up more than marginPx apart on screen — one
-// analytic zoom that fully separates every member, instead of guessing a
-// multiplier and making the user click repeatedly. Screen distance for two
-// points this close together, both near the rotation's sub-point, is well
-// approximated by scale * angularDistance (radians).
-export function scaleToSeparate(cluster: GlobeZoneCluster, marginPx = CLUSTER_MERGE_PX * 2.5): number | null {
-  if (cluster.members.length < 2) return null
-
-  let minAngular = Infinity
-  for (let i = 0; i < cluster.members.length; i++) {
-    for (let j = i + 1; j < cluster.members.length; j++) {
-      const a = cluster.members[i]
-      const b = cluster.members[j]
-      const angular = d3.geoDistance([a.lng, a.lat], [b.lng, b.lat])
-      if (angular < minAngular) minAngular = angular
-    }
-  }
-
-  return minAngular > 0 ? marginPx / minAngular : null
-}
-
 interface AttachGlobeInteractionsArgs {
   canvas: HTMLCanvasElement
   projection: d3.GeoProjection
