@@ -33,6 +33,8 @@ interface ReportScoredRow {
   judul: string;
   deskripsi: string;
   kawasan: string;
+  lat: number | null;
+  lng: number | null;
   jenis_kerusakan: JenisKerusakan;
   tingkat_bahaya: TingkatBahaya;
   estimasi_terdampak: number;
@@ -83,6 +85,8 @@ export class ReportsService {
         judul: dto.judul,
         deskripsi: dto.deskripsi,
         kawasan: dto.kawasan,
+        lat: dto.lat,
+        lng: dto.lng,
         jenis_kerusakan: dto.jenis_kerusakan,
         tingkat_bahaya: dto.tingkat_bahaya,
         estimasi_terdampak: dto.estimasi_terdampak,
@@ -327,7 +331,7 @@ export class ReportsService {
     return Prisma.sql`
       WITH mentah AS (
         SELECT
-          id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
+          id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
           estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh,
           (CASE tingkat_bahaya
             WHEN 'rendah' THEN 0.25
@@ -349,7 +353,7 @@ export class ReportsService {
         FROM mentah
       )
       SELECT
-        id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
+        id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
         estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh,
         ROUND((
           komponen_bahaya * ${Prisma.raw(String(BOBOT_BAHAYA))}
@@ -372,6 +376,8 @@ export class ReportsService {
       judul: row.judul,
       deskripsi: row.deskripsi,
       kawasan: row.kawasan,
+      lat: row.lat,
+      lng: row.lng,
       jenis_kerusakan: row.jenis_kerusakan,
       tingkat_bahaya: row.tingkat_bahaya,
       estimasi_terdampak: row.estimasi_terdampak,

@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsString, Min, MinLength } from 'class-validator';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Min, MinLength } from 'class-validator';
 import { JenisKerusakan, TingkatBahaya } from '../../../generated/prisma/client';
 
 
@@ -22,6 +22,19 @@ export class CreateReportDto {
   @IsString()
   @MinLength(3)
   kawasan: string;
+
+  // Opsional buat sementara: form Lapor Baru (JEK-37) yang wajib ngirim ini
+  // belum kelar disambung ke globe/picker lokasinya. Begitu itu selesai,
+  // naikkan jadi wajib biar laporan baru selalu punya koordinat buat peta (JEK-45).
+  @ApiPropertyOptional({ example: -6.9147 })
+  @IsOptional()
+  @IsLatitude()
+  lat?: number;
+
+  @ApiPropertyOptional({ example: 107.6098 })
+  @IsOptional()
+  @IsLongitude()
+  lng?: number;
 
   @ApiProperty({ enum: JenisKerusakan, example: JenisKerusakan.jalan })
   @IsEnum(JenisKerusakan)
