@@ -12,8 +12,8 @@ import PanelPetugas from './pages/PanelPetugas'
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Beranda />} />
       <Route element={<Layout />}>
-        <Route path="/" element={<Beranda />} />
         <Route path="/laporan/:id" element={<DetailLaporan />} />
         <Route path="/lapor-baru" element={<LaporBaru />} />
         <Route path="/metodologi" element={<Metodologi />} />

@@ -10,5 +10,8 @@
     "dev:frontend": "npm run dev --workspace apps/frontend",
     "build:backend": "npm run build --workspace apps/backend",
     "build:frontend": "npm run build --workspace apps/frontend"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
