@@ -39,7 +39,7 @@ function Shot({
   return (
     <div
       data-cursor-label="View"
-      className={`group relative shrink-0 overflow-hidden rounded-2xl border border-white/10 ${
+      className={`group relative shrink-0 overflow-hidden rounded-2xl border border-black/10 ${
         wide
           ? "h-[52vh] w-[80vw] md:w-[44vw]"
           : "h-[62vh] w-[62vw] md:w-[26vw]"
@@ -54,10 +54,10 @@ function Shot({
           className="h-full w-full scale-[1.15] object-cover grayscale transition-transform duration-700 group-hover:scale-[1.25]"
         />
       </motion.div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-5">
         <span className="text-sm font-semibold tracking-tight">{label}</span>
-        <span className="font-mono text-xs text-neutral-400">
+        <span className="font-mono text-xs text-neutral-600">
           0{index + 1} / 0{shots.length}
         </span>
       </div>
@@ -133,12 +133,12 @@ export default function Gallery() {
           {/* end card */}
           <a
             href="#contact"
-            className="group flex h-[52vh] w-[70vw] shrink-0 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/20 transition-colors hover:border-white/50 md:w-[24vw]"
+            className="group flex h-[52vh] w-[70vw] shrink-0 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-black/20 transition-colors hover:border-black/50 md:w-[24vw]"
           >
             <span className="text-3xl font-black tracking-tighter">
               Your project
             </span>
-            <span className="text-sm text-neutral-400 transition-transform duration-500 group-hover:translate-x-2">
+            <span className="text-sm text-neutral-600 transition-transform duration-500 group-hover:translate-x-2">
               could live here →
             </span>
           </a>
@@ -146,10 +146,10 @@ export default function Gallery() {
 
         {/* travel progress */}
         <div className="mt-10 flex items-center gap-4 px-6 md:px-[8vw]">
-          <div className="relative h-px w-44 bg-white/15">
+          <div className="relative h-px w-44 bg-black/15">
             <motion.div
               style={{ scaleX: barScale }}
-              className="absolute inset-0 origin-left bg-white"
+              className="absolute inset-0 origin-left bg-black"
             />
           </div>
           <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-neutral-500">

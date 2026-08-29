@@ -47,7 +47,7 @@ const fragment = /* glsl */ `
     float d = length(uv);
     if (d > 0.5) discard;
     float alpha = smoothstep(0.5, 0.0, d);
-    float shade = mix(0.5, 1.0, vRandom.y);
+    float shade = mix(0.5, 0.0, vRandom.y);
     gl_FragColor = vec4(vec3(shade), alpha * 0.85);
   }
 `;

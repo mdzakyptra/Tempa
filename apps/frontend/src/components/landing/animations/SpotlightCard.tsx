@@ -27,7 +27,7 @@ export default function SpotlightCard({
     const rect = el.getBoundingClientRect();
     glow.style.background = `radial-gradient(420px circle at ${
       e.clientX - rect.left
-    }px ${e.clientY - rect.top}px, rgba(255,255,255,0.12), transparent 45%)`;
+    }px ${e.clientY - rect.top}px, rgba(0,0,0,0.12), transparent 45%)`;
   }
 
   return (
@@ -40,7 +40,7 @@ export default function SpotlightCard({
       onMouseLeave={() => {
         if (glowRef.current) glowRef.current.style.opacity = "0";
       }}
-      className={`relative overflow-hidden rounded-2xl border border-white/12 bg-neutral-950 ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-black/12 bg-neutral-50 ${className}`}
     >
       <div
         ref={glowRef}

@@ -29,10 +29,10 @@ function Word({
   const lit = useTransform(progress, range, [0, 1]);
   const backgroundColor = useTransform(
     lit,
-    (v) => `rgba(255,255,255,${inverted ? v : 0})`
+    (v) => `rgba(0,0,0,${inverted ? v : 0})`
   );
   const color = useTransform(lit, (v) =>
-    inverted && v > 0.6 ? "#000" : "#fff"
+    inverted && v > 0.6 ? "#fff" : "#000"
   );
 
   return (

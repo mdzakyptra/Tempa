@@ -60,10 +60,10 @@ export default function Process() {
 
       <div ref={trackRef} className="relative mx-auto max-w-5xl">
         {/* rail + self-drawing line */}
-        <div className="absolute bottom-0 left-4 top-0 w-px bg-white/10 md:left-1/2" />
+        <div className="absolute bottom-0 left-4 top-0 w-px bg-black/10 md:left-1/2" />
         <motion.div
           style={{ scaleY: lineScale }}
-          className="absolute bottom-0 left-4 top-0 w-px origin-top bg-white md:left-1/2"
+          className="absolute bottom-0 left-4 top-0 w-px origin-top bg-black md:left-1/2"
         />
 
         <div className="flex flex-col gap-20 md:gap-28">
@@ -80,7 +80,7 @@ export default function Process() {
                   whileInView={{ scale: 1 }}
                   viewport={{ once: false, margin: "-25%" }}
                   transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                  className="absolute left-4 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white md:left-1/2"
+                  className="absolute left-4 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-black md:left-1/2"
                 />
 
                 {/* ghost number on the empty side */}
@@ -117,7 +117,7 @@ export default function Process() {
                       <h3 className="mt-4 text-2xl font-bold tracking-tight">
                         {s.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+                      <p className="mt-3 text-sm leading-relaxed text-neutral-600">
                         {s.desc}
                       </p>
                     </SpotlightCard>

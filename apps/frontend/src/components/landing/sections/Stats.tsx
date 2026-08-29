@@ -11,7 +11,7 @@ const stats = [
 //<---------- Stats -------------->
 export default function Stats() {
   return (
-    <section className="relative border-y border-white/10 px-6 py-24">
+    <section className="relative border-y border-black/10 px-6 py-24">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 md:grid-cols-4">
         {stats.map((s, i) => (
           <ScrollReveal key={s.label} delay={i * 0.1} direction="up">

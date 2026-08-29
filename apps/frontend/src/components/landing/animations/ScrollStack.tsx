@@ -33,7 +33,7 @@ export function ScrollStackItem({
 }) {
   return (
     <div
-      className={`h-full w-full rounded-3xl border border-white/15 bg-neutral-950 p-8 md:p-12 ${className}`}
+      className={`h-full w-full rounded-3xl border border-black/15 bg-neutral-50 p-8 md:p-12 ${className}`}
     >
       {children}
     </div>
@@ -90,7 +90,7 @@ function Card({
   const boxShadow = useTransform(
     glow,
     (g) =>
-      `0 -24px 60px -20px rgba(0,0,0,${0.9 * g}), 0 ${40 * g}px ${90 * g}px -30px rgba(255,255,255,${0.16 * g}), 0 0 0 1px rgba(255,255,255,${0.05 * g})`
+      `0 -24px 60px -20px rgba(255,255,255,${0.9 * g}), 0 ${40 * g}px ${90 * g}px -30px rgba(0,0,0,${0.16 * g}), 0 0 0 1px rgba(0,0,0,${0.05 * g})`
   );
 
   return (
@@ -190,10 +190,10 @@ function ProgressRail({
       className="pointer-events-none fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 lg:flex xl:right-10"
     >
       <div className="flex items-center gap-4">
-        <div className="relative h-40 w-px bg-white/10">
+        <div className="relative h-40 w-px bg-black/10">
           <motion.div
             style={{ scaleY: fillScale }}
-            className="absolute left-0 top-0 w-px origin-top bg-white"
+            className="absolute left-0 top-0 w-px origin-top bg-black"
           />
         </div>
         <div className="flex flex-col gap-4">
@@ -201,12 +201,12 @@ function ProgressRail({
             <div key={i} className="flex items-center gap-2">
               <span
                 className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
-                  i === active ? "scale-150 bg-white" : "bg-white/25"
+                  i === active ? "scale-150 bg-black" : "bg-black/25"
                 }`}
               />
               <span
                 className={`font-mono text-[10px] tabular-nums transition-colors duration-300 ${
-                  i === active ? "text-white" : "text-white/25"
+                  i === active ? "text-black" : "text-black/25"
                 }`}
               >
                 0{i + 1}
