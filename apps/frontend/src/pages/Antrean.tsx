@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { MapPin } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
+import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
 
 //<---------- CardSkeleton -------------->
 function CardSkeleton() {
@@ -17,16 +19,39 @@ function CardSkeleton() {
   )
 }
 
+//<---------- buildQueryString -------------->
+function buildQueryString(filter: ReportFilterValue) {
+  const params = new URLSearchParams()
+  if (filter.kawasan) params.set('kawasan', filter.kawasan)
+  if (filter.jenis_kerusakan) params.set('jenis_kerusakan', filter.jenis_kerusakan)
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
+}
+
 //<---------- Antrean -------------->
 export default function Antrean() {
+  const [filter, setFilter] = useState<ReportFilterValue>({ kawasan: '', jenis_kerusakan: '' })
+
   const {
     data: reports,
     isLoading,
     isError,
   } = useQuery({
+    queryKey: ['reports', filter.kawasan, filter.jenis_kerusakan],
+    queryFn: () => apiFetch<ReportListItem[]>(`/reports${buildQueryString(filter)}`),
+  })
+
+  // Dipisah dari query daftar di atas: query ini SELALU tanpa filter, cuma
+  // dipakai buat isi opsi dropdown kawasan supaya opsinya tidak ikut menyusut
+  // waktu user lagi mempersempit hasil.
+  const { data: semuaLaporan } = useQuery({
     queryKey: ['reports'],
     queryFn: () => apiFetch<ReportListItem[]>('/reports'),
+    staleTime: Infinity,
   })
+  const kawasanOptions = [...new Set((semuaLaporan ?? []).map((r) => r.kawasan))].sort()
+
+  const isFilterActive = filter.kawasan !== '' || filter.jenis_kerusakan !== ''
 
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -37,22 +62,7 @@ export default function Antrean() {
 
       <div className="mt-6 grid gap-6 md:grid-cols-[1fr_320px]">
         <div>
-          {/* TODO(JEK-32): sambungkan ke query param kawasan/jenis_kerusakan */}
-          <div className="mb-4 flex flex-col gap-3 rounded-xl border border-dashed border-neutral-300 p-4 sm:flex-row sm:items-center">
-            <select
-              disabled
-              className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-400"
-            >
-              <option>Semua kawasan</option>
-            </select>
-            <select
-              disabled
-              className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-400"
-            >
-              <option>Semua jenis kerusakan</option>
-            </select>
-            <span className="text-xs text-neutral-400 sm:ml-auto">Filter segera hadir</span>
-          </div>
+          <ReportFilter value={filter} kawasanOptions={kawasanOptions} onChange={setFilter} />
 
           {isLoading && (
             <div className="flex flex-col gap-4">
@@ -70,7 +80,7 @@ export default function Antrean() {
 
           {reports && reports.length === 0 && (
             <p className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">
-              Belum ada laporan.
+              {isFilterActive ? 'Tidak ada laporan yang cocok dengan filter ini.' : 'Belum ada laporan.'}
             </p>
           )}
 

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { MapPin, ThumbsUp } from 'lucide-react'
 import { cn } from '../../lib/cn'
+import { JENIS_KERUSAKAN_LABEL } from './constants'
 
 export interface ReportListItem {
   id: string
@@ -21,16 +22,6 @@ export interface ReportListItem {
 
 interface ReportCardProps {
   report: ReportListItem
-}
-
-const JENIS_KERUSAKAN_LABEL: Record<ReportListItem['jenis_kerusakan'], string> = {
-  jalan: 'Jalan',
-  trotoar: 'Trotoar',
-  lampu_jalan: 'Lampu Jalan',
-  drainase: 'Drainase',
-  jembatan: 'Jembatan',
-  fasilitas_umum: 'Fasilitas Umum',
-  lainnya: 'Lainnya',
 }
 
 const TINGKAT_BAHAYA_STYLE: Record<ReportListItem['tingkat_bahaya'], string> = {
