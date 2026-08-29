@@ -7,7 +7,6 @@ import Manifesto from '../components/landing/sections/Manifesto'
 import MapReport from '../components/landing/sections/MapReport'
 import WorkStack from '../components/landing/sections/WorkStack'
 import Process from '../components/landing/sections/Process'
-import Gallery from '../components/landing/sections/Gallery'
 import Stats from '../components/landing/sections/Stats'
 import CTA from '../components/landing/sections/CTA'
 import Footer from '../components/landing/sections/Footer'
@@ -30,7 +29,6 @@ export default function Beranda() {
         <MapReport />
         <WorkStack />
         <Process />
-        <Gallery />
         <Stats />
         <CTA />
       </main>

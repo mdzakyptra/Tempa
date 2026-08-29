@@ -28,6 +28,26 @@ const KAWASAN_LIST = [
   'Kelurahan Gedebage',
 ] as const;
 
+// Koordinat titik tengah tiap kawasan (Bandung asli) — buat isi lat/lng (JEK-45)
+// di data seed, biar peta Antrean/Detail Laporan langsung ada penanda buat dicoba.
+const KAWASAN_COORDS: Record<(typeof KAWASAN_LIST)[number], [number, number]> = {
+  'Kelurahan Sukajadi': [-6.8898, 107.5806],
+  'Kelurahan Cibeunying': [-6.9007, 107.6236],
+  'Kelurahan Antapani': [-6.9159, 107.6553],
+  'Kelurahan Kopo': [-6.9482, 107.5852],
+  'Kelurahan Dago': [-6.8807, 107.6133],
+  'Kelurahan Cicadas': [-6.9134, 107.639],
+  'Kelurahan Buah Batu': [-6.9557, 107.6367],
+  'Kelurahan Gedebage': [-6.9508, 107.6864],
+};
+
+//<---------- jitterCoord -------------->
+// Sebaran kecil (~±500m) biar laporan sekawasan gak numpuk persis di titik yang sama.
+function jitterCoord([lat, lng]: [number, number]): [number, number] {
+  const jitter = () => (Math.random() - 0.5) * 0.01;
+  return [lat + jitter(), lng + jitter()];
+}
+
 interface ReportSeed {
   judul: string;
   deskripsi: string;
@@ -383,10 +403,15 @@ async function seedReports(wargaIds: string[]): Promise<string[]> {
   const reportIds: string[] = [];
 
   for (const report of allReports) {
+    const [lat, lng] = jitterCoord(
+      KAWASAN_COORDS[report.kawasan as keyof typeof KAWASAN_COORDS],
+    );
     const created = await prisma.report.create({
       data: {
         id: randomUUID(),
         ...report,
+        lat,
+        lng,
         dibuat_oleh: pick(wargaIds),
         // Embedding sengaja dibiarkan null di sini — JEK-19 (deteksi embedding)
         // belum selesai saat seed ini ditulis. Begitu endpoint AI-nya siap,

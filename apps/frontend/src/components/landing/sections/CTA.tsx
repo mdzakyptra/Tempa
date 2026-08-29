@@ -4,6 +4,12 @@ import SplitText from "../animations/SplitText";
 import MagneticButton from "../animations/MagneticButton";
 import ScrollReveal from "../animations/ScrollReveal";
 import TextScramble from "../animations/TextScramble";
+import { apiFetch } from "../../../lib/api";
+
+interface HealthResponse {
+  status: string;
+  database: string;
+}
 
 //<---------- CTA -------------->
 export default function CTA() {
@@ -11,22 +17,20 @@ export default function CTA() {
   const [message, setMessage] = useState("Menghubungkan ke backend…");
 
   useEffect(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:3000";
-    fetch(`${url}/api/hello`)
-      .then((r) => r.json())
+    apiFetch<HealthResponse>("/health")
       .then((d) => {
-        setMessage(d.message);
-        setStatus("ok");
+        setMessage(`Backend & database ${d.database === "up" ? "aktif" : "bermasalah"}`);
+        setStatus(d.database === "up" ? "ok" : "down");
       })
       .catch(() => {
-        setMessage("Backend (be) tidak terhubung");
+        setMessage("Backend tidak terhubung");
         setStatus("down");
       });
   }, []);
 
   return (
     <section
-      id="contact"
+      id="kontak"
       className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden px-6 py-28 text-center"
     >
       <Particles count={260} className="opacity-80" />
@@ -35,29 +39,29 @@ export default function CTA() {
       <div className="relative z-10 flex flex-col items-center">
         <ScrollReveal>
           <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            <TextScramble text="Ready when you are" />
+            <TextScramble text="Antrean menunggumu" />
           </span>
         </ScrollReveal>
 
         <h2 className="mt-6 max-w-4xl text-5xl font-black leading-[0.95] tracking-tighter sm:text-7xl md:text-8xl">
-          <SplitText text="Let's make" />
+          <SplitText text="Laporan menumpuk?" />
           <br />
           <span className="text-stroke">
-            <SplitText text="something loud" delay={0.2} />
+            <SplitText text="Bikin dia kelihatan" delay={0.2} />
           </span>
         </h2>
 
         <p className="mt-8 max-w-lg text-neutral-600">
-          In the quietest palette there is. Tell us about your project and
-          we&apos;ll turn contrast into motion.
+          Sekali lapor, skornya langsung kelihatan. Warga lain bisa dukung,
+          petugas bisa tindak lanjuti, kamu bisa pantau posisinya di antrean.
         </p>
 
         <MagneticButton
-          href="mailto:hello@monolith.studio"
+          href="/lapor-baru"
           strength={0.5}
           className="mt-10 rounded-full bg-black px-10 py-5 text-base font-semibold text-white"
         >
-          Start a project →
+          Lapor Sekarang →
         </MagneticButton>
 
         {/* live backend status — keeps the fe <-> be link visible */}

@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MapPin } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
 import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
+import { CityMap, type CityMapMarker } from '../components/city-map'
 
 //<---------- CardSkeleton -------------->
 function CardSkeleton() {
@@ -30,7 +32,14 @@ function buildQueryString(filter: ReportFilterValue) {
 
 //<---------- Antrean -------------->
 export default function Antrean() {
-  const [filter, setFilter] = useState<ReportFilterValue>({ kawasan: '', jenis_kerusakan: '' })
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // Baca sekali di awal — deep-link dari zona globe landing page (?kawasan=X).
+  // Bukan sinkron dua arah, cuma titik masuk filter.
+  const [filter, setFilter] = useState<ReportFilterValue>({
+    kawasan: searchParams.get('kawasan') ?? '',
+    jenis_kerusakan: '',
+  })
 
   const {
     data: reports,
@@ -52,6 +61,10 @@ export default function Antrean() {
   const kawasanOptions = [...new Set((semuaLaporan ?? []).map((r) => r.kawasan))].sort()
 
   const isFilterActive = filter.kawasan !== '' || filter.jenis_kerusakan !== ''
+
+  const markers: CityMapMarker[] = (reports ?? [])
+    .filter((r): r is ReportListItem & { lat: number; lng: number } => r.lat !== null && r.lng !== null)
+    .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul }))
 
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -93,10 +106,15 @@ export default function Antrean() {
           )}
         </div>
 
-        {/* TODO(JEK-45): ganti placeholder ini dengan CityMap begitu Report punya koordinat asli */}
-        <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 md:sticky md:top-6 md:h-fit md:min-h-64">
-          <MapPin className="h-8 w-8" />
-          <p className="text-sm">Peta laporan segera hadir</p>
+        <div className="h-64 overflow-hidden rounded-2xl border border-neutral-200 md:sticky md:top-6 md:h-[calc(100vh-6rem)] md:min-h-64">
+          {markers.length > 0 ? (
+            <CityMap markers={markers} onMarkerClick={(marker) => navigate(`/laporan/${marker.id}`)} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-2 bg-neutral-50 text-neutral-400">
+              <MapPin className="h-8 w-8" />
+              <p className="px-4 text-center text-sm">Belum ada laporan dengan lokasi tersimpan.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,10 +2,10 @@ import CountUp from "../animations/CountUp";
 import ScrollReveal from "../animations/ScrollReveal";
 
 const stats = [
-  { to: 128, suffix: "+", label: "Projects shipped" },
-  { to: 24, suffix: "", label: "Design awards" },
-  { to: 60, suffix: "fps", label: "Never dropped" },
-  { to: 100, suffix: "%", label: "Monochrome" },
+  { to: 4, suffix: "", label: "Komponen skor" },
+  { to: 2, suffix: "", label: "Fitur AI" },
+  { to: 0, suffix: "", label: "Cronjob — real-time" },
+  { to: 100, suffix: "%", label: "Transparan" },
 ];
 
 //<---------- Stats -------------->
