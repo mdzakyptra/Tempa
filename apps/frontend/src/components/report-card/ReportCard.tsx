@@ -8,6 +8,8 @@ export interface ReportListItem {
   judul: string
   deskripsi: string
   kawasan: string
+  lat: number | null
+  lng: number | null
   jenis_kerusakan: 'jalan' | 'trotoar' | 'lampu_jalan' | 'drainase' | 'jembatan' | 'fasilitas_umum' | 'lainnya'
   tingkat_bahaya: 'rendah' | 'sedang' | 'tinggi' | 'darurat'
   estimasi_terdampak: number

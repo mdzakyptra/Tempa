@@ -9,10 +9,10 @@ import type { MotionValue } from "motion/react";
  */
 
 const TEXT =
-  "Motion is not decoration. It is the grammar of attention — every frame either earns focus or wastes it. So we strip away color until only rhythm remains, then choreograph black, white, and the silence between them.";
+  "Warga tidak hanya melapor. Warga melihat skor prioritas laporannya secara transparan, mendukung laporan orang lain, dan bertanya langsung ke asisten AI kenapa satu laporan didahulukan dari yang lain.";
 
 // words rendered as inverted chips once lit
-const INVERTED = new Set(["grammar", "rhythm", "choreograph", "silence"]);
+const INVERTED = new Set(["skor", "transparan", "ai", "didahulukan"]);
 
 function Word({
   children,

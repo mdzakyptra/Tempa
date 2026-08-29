@@ -6,6 +6,7 @@ const navItems = [
   { to: '/lapor-baru', label: 'Lapor Baru' },
   { to: '/metodologi', label: 'Metodologi' },
   { to: '/auth', label: 'Masuk' },
+  { to: '/panel-petugas', label: 'Panel Petugas' },
 ]
 
 //<---------- Layout -------------->

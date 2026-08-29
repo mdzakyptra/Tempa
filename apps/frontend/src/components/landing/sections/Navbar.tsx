@@ -4,10 +4,10 @@ import MagneticButton from "../animations/MagneticButton";
 import RollingText from "../animations/RollingText";
 
 const links = [
-  { label: "Work", href: "#work" },
-  { label: "Process", href: "#process" },
-  { label: "Gallery", href: "#gallery" },
-  { label: "Contact", href: "#contact" },
+  { label: "Fitur", href: "#fitur" },
+  { label: "Skor", href: "#skor" },
+  { label: "Lapor", href: "#lapor" },
+  { label: "Kontak", href: "#kontak" },
 ];
 
 //<---------- Navbar -------------->
@@ -55,7 +55,7 @@ export default function Navbar() {
         }`}
       >
         <a href="#top" className="text-lg font-black tracking-tighter">
-          MONO<span className="text-neutral-500">/</span>LITH
+          Antrean<span className="text-neutral-500">.</span>Kota
         </a>
 
         <ul className="hidden items-center gap-8 md:flex">
@@ -73,10 +73,10 @@ export default function Navbar() {
         </ul>
 
         <MagneticButton
-          href="#contact"
+          href="/lapor-baru"
           className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white"
         >
-          Let&apos;s talk
+          Lapor Sekarang
         </MagneticButton>
       </nav>
     </motion.header>

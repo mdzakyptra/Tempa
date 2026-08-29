@@ -12,24 +12,24 @@ import SplitText from "../animations/SplitText";
 
 const steps = [
   {
-    n: "01",
-    title: "Discover",
-    desc: "We strip the problem down to pure black and white — no noise, only signal.",
+    n: "35%",
+    title: "Tingkat bahaya",
+    desc: "Dipilih saat lapor, dari rendah sampai darurat.",
   },
   {
-    n: "02",
-    title: "Design",
-    desc: "Every frame is choreographed. Contrast, rhythm, and negative space do the talking.",
+    n: "25%",
+    title: "Jumlah warga terdampak",
+    desc: "Estimasi awal ditambah jumlah baris di tabel votes.",
   },
   {
-    n: "03",
-    title: "Animate",
-    desc: "Motion is the medium. WebGL, springs, and scroll turn static into alive.",
+    n: "20%",
+    title: "Lama menunggu",
+    desc: "Selisih tanggal sekarang dengan tanggal laporan dibuat.",
   },
   {
-    n: "04",
-    title: "Ship",
-    desc: "Pixel-perfect, 60fps, accessible. Then we obsess over the details again.",
+    n: "20%",
+    title: "Jalur vital",
+    desc: "Ditandai otomatis bila lokasi dekat sekolah, rumah sakit, atau jalur utama.",
   },
 ];
 
@@ -46,15 +46,15 @@ export default function Process() {
   });
 
   return (
-    <section id="process" className="relative px-6 py-28">
+    <section id="skor" className="relative px-6 py-28">
       <div className="mx-auto mb-20 max-w-4xl text-center">
         <ScrollReveal>
           <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            How we work
+            Rumus skor prioritas
           </span>
         </ScrollReveal>
         <h2 className="mt-4 text-4xl font-black tracking-tighter sm:text-6xl">
-          <SplitText text="A four step ritual" />
+          <SplitText text="Skor, bukan tebakan" />
         </h2>
       </div>
 
@@ -71,7 +71,7 @@ export default function Process() {
             const fromLeft = i % 2 === 0;
             return (
               <div
-                key={s.n}
+                key={s.title}
                 className="relative grid items-center gap-6 pl-12 md:grid-cols-2 md:gap-0 md:pl-0"
               >
                 {/* node on the line */}
@@ -112,7 +112,7 @@ export default function Process() {
                   <ScrollReveal direction={fromLeft ? "right" : "left"}>
                     <SpotlightCard className="p-8">
                       <span className="font-mono text-sm text-neutral-500">
-                        {s.n} / 04
+                        Bobot {s.n}
                       </span>
                       <h3 className="mt-4 text-2xl font-bold tracking-tight">
                         {s.title}

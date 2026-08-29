@@ -81,7 +81,7 @@ export default function Hero() {
           transition={{ delay: 0.6, duration: 1.6 }}
           className="text-stroke whitespace-nowrap text-[24vw] font-black leading-none tracking-tighter opacity-[0.07]"
         >
-          MONOLITH
+          ANTREAN
         </motion.span>
       </motion.div>
 
@@ -105,20 +105,20 @@ export default function Hero() {
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/20 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-neutral-700"
         >
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
-          <TextScramble text="Design in monochrome" />
+          <TextScramble text="Transparansi antrean kota" />
         </motion.span>
 
         <motion.h1
           style={{ x: headX, y: headY }}
           className="max-w-5xl text-5xl font-black leading-[0.95] tracking-tighter sm:text-7xl md:text-8xl"
         >
-          <SplitText by="chars" text="We build interfaces" />
+          <SplitText by="chars" text="Antrean perbaikan kota," />
           <br />
           <span className="text-stroke">
-            <SplitText by="chars" text="in black" delay={0.35} /> &amp;{" "}
+            <SplitText by="chars" text="kini" delay={0.35} />{" "}
           </span>
           <FlipWords
-            words={["white", "motion", "silence", "contrast"]}
+            words={["terlihat", "transparan", "adil", "real-time"]}
             className="italic"
             shiny
           />
@@ -130,8 +130,9 @@ export default function Hero() {
           transition={{ delay: 1.1, duration: 0.8 }}
           className="mt-8 max-w-xl text-balance text-lg text-neutral-600"
         >
-          A studio obsessed with motion, contrast, and the space between.
-          Full-animation experiences rendered pixel-perfect in monochrome.
+          Warga melapor, lihat skor prioritas laporannya, dukung laporan
+          orang lain, dan tanya langsung ke AI kenapa satu laporan
+          didahulukan dari yang lain.
         </motion.p>
 
         <motion.div
@@ -141,16 +142,16 @@ export default function Hero() {
           className="mt-10 flex flex-wrap items-center justify-center gap-4"
         >
           <MagneticButton
-            href="#work"
+            href="/lapor-baru"
             className="rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
           >
-            Explore work →
+            Lapor Kerusakan →
           </MagneticButton>
           <MagneticButton
-            href="#process"
+            href="#skor"
             className="rounded-full border border-black/25 px-8 py-4 text-sm font-semibold text-black"
           >
-            Our process
+            Lihat Skor
           </MagneticButton>
         </motion.div>
       </motion.div>
