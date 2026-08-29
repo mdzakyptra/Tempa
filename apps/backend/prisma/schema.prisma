@@ -67,6 +67,10 @@ model Report {
   judul              String
   deskripsi          String
   kawasan            String
+  // Nullable: laporan lama (seed) belum punya koordinat. Laporan baru (JEK-37)
+  // wajib isi ini lewat form Lapor Baru — dipakai peta (JEK-45), bukan skor.
+  lat                Float?
+  lng                Float?
   jenis_kerusakan    JenisKerusakan
   tingkat_bahaya     TingkatBahaya
   estimasi_terdampak Int                         @default(0)
