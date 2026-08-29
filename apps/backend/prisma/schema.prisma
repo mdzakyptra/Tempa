@@ -76,6 +76,9 @@ model Report {
   dibuat_pada        DateTime                    @default(now())
   dibuat_oleh        String?                     @db.Uuid
   digabung_ke_id     String?                     @db.Uuid
+  // Index vektor (HNSW, cosine ops, JEK-58) ada di migration
+  // 20260829042211_add_embedding_vector_index — nggak bisa direpresentasikan
+  // di sini karena kolom Unsupported nggak punya syntax @@index custom.
   embedding          Unsupported("vector(768)")?
 
   pelapor        Profile?        @relation(fields: [dibuat_oleh], references: [id])

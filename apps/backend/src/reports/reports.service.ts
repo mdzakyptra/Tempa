@@ -202,6 +202,17 @@ export class ReportsService {
     }
 
     const literal = `[${vector.join(',')}]`;
+
+    // JEK-58: sempat dicoba refactor bentuk CTE (hitung embedding <=> literal
+    // sekali, bukan 3x) dengan asumsi lebih murah — tapi diukur pakai
+    // EXPLAIN ANALYZE di data 5000 baris, hasilnya malah KONSISTEN lebih
+    // lambat (~9ms vs ~6-7ms, buffer hit ~2x lipat, diulang 2x biar bukan
+    // noise). Sebabnya: WHERE (cocok_atribut OR embedding_check) di bentuk
+    // ASLI ini manfaatin short-circuit OR — baris yang cocok_atribut TRUE
+    // (kawasan+jenis match) SAMA SEKALI skip hitung jarak vektor. Bentuk
+    // CTE ngitung buat SEMUA baris tanpa syarat duluan, baru difilter —
+    // kehilangan keuntungan short-circuit itu meski "cuma dihitung 1x".
+    // Makanya bentuk ini dipertahankan apa adanya, bukan "dioptimasi".
     return this.prisma.$queryRaw<ReportSimilarRow[]>`
       SELECT
         id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
