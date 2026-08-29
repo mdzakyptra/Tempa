@@ -4,6 +4,7 @@ import Navbar from '../components/landing/sections/Navbar'
 import Hero from '../components/landing/sections/Hero'
 import LogoMarquee from '../components/landing/sections/LogoMarquee'
 import Manifesto from '../components/landing/sections/Manifesto'
+import MapReport from '../components/landing/sections/MapReport'
 import WorkStack from '../components/landing/sections/WorkStack'
 import Process from '../components/landing/sections/Process'
 import Gallery from '../components/landing/sections/Gallery'
@@ -15,7 +16,7 @@ import Footer from '../components/landing/sections/Footer'
 //<---------- Beranda -------------->
 export default function Beranda() {
   return (
-    <div className="bg-black text-white antialiased">
+    <div className="bg-white text-black antialiased">
       <ScrollProgress />
       <CustomCursor />
       <div className="grain-overlay" aria-hidden />
@@ -26,6 +27,7 @@ export default function Beranda() {
         <Hero />
         <LogoMarquee />
         <Manifesto />
+        <MapReport />
         <WorkStack />
         <Process />
         <Gallery />

@@ -71,11 +71,11 @@ export default function WorkStack() {
                   <h3 className="mt-3 text-3xl font-black tracking-tighter md:text-5xl">
                     {p.title}
                   </h3>
-                  <p className="mt-4 text-neutral-400">{p.desc}</p>
-                  <div className="group mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                  <p className="mt-4 text-neutral-600">{p.desc}</p>
+                  <div className="group mt-6 inline-flex items-center gap-2 text-sm font-semibold text-black">
                     <span className="relative">
                       View case study
-                      <span className="absolute -bottom-1 left-0 h-px w-0 bg-white transition-all duration-300 group-hover:w-full" />
+                      <span className="absolute -bottom-1 left-0 h-px w-0 bg-black transition-all duration-300 group-hover:w-full" />
                     </span>
                     <span
                       aria-hidden
@@ -87,7 +87,7 @@ export default function WorkStack() {
                 </div>
                 <div
                   data-cursor-label="View"
-                  className={`group/img relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 ${
+                  className={`group/img relative aspect-[4/3] overflow-hidden rounded-2xl border border-black/10 ${
                     flipped ? "md:order-1" : ""
                   }`}
                 >

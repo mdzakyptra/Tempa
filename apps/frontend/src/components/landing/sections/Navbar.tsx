@@ -50,7 +50,7 @@ export default function Navbar() {
       <nav
         className={`flex w-full max-w-5xl items-center justify-between rounded-full border px-5 py-3 transition-all duration-500 ${
           scrolled
-            ? "border-white/15 bg-black/60 backdrop-blur-xl"
+            ? "border-black/15 bg-white/60 backdrop-blur-xl"
             : "border-transparent bg-transparent"
         }`}
       >
@@ -63,10 +63,10 @@ export default function Navbar() {
             <li key={l.href}>
               <a
                 href={l.href}
-                className="group relative text-sm text-neutral-300 transition-colors hover:text-white"
+                className="group relative text-sm text-neutral-700 transition-colors hover:text-black"
               >
                 <RollingText text={l.label} />
-                <span className="absolute -bottom-1 left-0 h-px w-0 bg-white transition-all duration-300 group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 h-px w-0 bg-black transition-all duration-300 group-hover:w-full" />
               </a>
             </li>
           ))}
@@ -74,7 +74,7 @@ export default function Navbar() {
 
         <MagneticButton
           href="#contact"
-          className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+          className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white"
         >
           Let&apos;s talk
         </MagneticButton>

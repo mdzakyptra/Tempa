@@ -26,9 +26,9 @@ export default function Marquee({
       className={`group relative flex overflow-hidden ${className}`}
       style={{
         maskImage:
-          "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)",
+          "linear-gradient(to right, transparent, #fff 8%, #fff 92%, transparent)",
         WebkitMaskImage:
-          "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)",
+          "linear-gradient(to right, transparent, #fff 8%, #fff 92%, transparent)",
       }}
     >
       {[0, 1].map((i) => (

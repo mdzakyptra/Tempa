@@ -77,7 +77,7 @@ const fragment = /* glsl */ `
     float vignette = smoothstep(1.1, 0.35, distance(uv, vec2(0.5)));
     float alpha = intensity * vignette;
 
-    gl_FragColor = vec4(vec3(intensity), alpha);
+    gl_FragColor = vec4(vec3(1.0 - intensity), alpha);
   }
 `;
 

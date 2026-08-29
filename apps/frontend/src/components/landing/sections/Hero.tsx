@@ -20,7 +20,7 @@ function Corner({ className }: { className: string }) {
       initial={{ opacity: 0, scale: 0.4 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 1.6, duration: 0.8 }}
-      className={`absolute z-10 select-none font-mono text-lg text-white/25 ${className}`}
+      className={`absolute z-10 select-none font-mono text-lg text-black/25 ${className}`}
       aria-hidden
     >
       +
@@ -92,7 +92,7 @@ export default function Hero() {
       <Corner className="bottom-8 right-6 md:right-10" />
 
       {/* fade to black at the bottom */}
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent" />
 
       <motion.div
         style={{ y, opacity, scale }}
@@ -102,9 +102,9 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8 }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-neutral-300"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/20 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-neutral-700"
         >
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
           <TextScramble text="Design in monochrome" />
         </motion.span>
 
@@ -128,7 +128,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.1, duration: 0.8 }}
-          className="mt-8 max-w-xl text-balance text-lg text-neutral-400"
+          className="mt-8 max-w-xl text-balance text-lg text-neutral-600"
         >
           A studio obsessed with motion, contrast, and the space between.
           Full-animation experiences rendered pixel-perfect in monochrome.
@@ -142,13 +142,13 @@ export default function Hero() {
         >
           <MagneticButton
             href="#work"
-            className="rounded-full bg-white px-8 py-4 text-sm font-semibold text-black"
+            className="rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
           >
             Explore work →
           </MagneticButton>
           <MagneticButton
             href="#process"
-            className="rounded-full border border-white/25 px-8 py-4 text-sm font-semibold text-white"
+            className="rounded-full border border-black/25 px-8 py-4 text-sm font-semibold text-black"
           >
             Our process
           </MagneticButton>
@@ -160,9 +160,9 @@ export default function Hero() {
         style={{ opacity }}
         className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
       >
-        <div className="flex h-10 w-6 items-start justify-center rounded-full border border-white/30 p-1.5">
+        <div className="flex h-10 w-6 items-start justify-center rounded-full border border-black/30 p-1.5">
           <motion.span
-            className="h-2 w-1 rounded-full bg-white"
+            className="h-2 w-1 rounded-full bg-black"
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 1.6, repeat: Infinity }}
           />

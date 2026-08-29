@@ -40,7 +40,7 @@ export default function TiltCard({
 
   const glareX = useTransform(mx, [0, 1], ["0%", "100%"]);
   const glareY = useTransform(my, [0, 1], ["0%", "100%"]);
-  const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.35), transparent 55%)`;
+  const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(0,0,0,0.35), transparent 55%)`;
 
   function handleMove(e: React.MouseEvent) {
     const el = ref.current;

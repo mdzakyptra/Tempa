@@ -17,12 +17,12 @@ export default function GridBackground({
         className="absolute inset-0 opacity-[0.12]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+            "linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)",
           backgroundSize: "56px 56px",
           maskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 100%)",
+            "radial-gradient(ellipse 80% 60% at 50% 40%, #fff 40%, transparent 100%)",
           WebkitMaskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 100%)",
+            "radial-gradient(ellipse 80% 60% at 50% 40%, #fff 40%, transparent 100%)",
         }}
       />
       {/* drifting glow */}
@@ -30,7 +30,7 @@ export default function GridBackground({
         className="absolute left-1/2 top-1/2 h-[60vmax] w-[60vmax] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 60%)",
+            "radial-gradient(circle, rgba(0,0,0,0.10) 0%, transparent 60%)",
         }}
         animate={{
           x: ["-10%", "10%", "-10%"],
