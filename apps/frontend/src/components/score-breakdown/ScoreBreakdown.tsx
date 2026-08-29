@@ -66,7 +66,7 @@ export default function ScoreBreakdown({ report }: ScoreBreakdownProps) {
         <h3 className="text-lg font-semibold text-neutral-900">Rincian Skor Prioritas</h3>
         <span className="rounded-full bg-neutral-900 px-3 py-1 text-sm font-bold text-white">{report.skor}</span>
       </div>
-
+      
       <div className="mt-4 flex flex-col gap-3">
         <ScoreRow
           nama="Tingkat Bahaya"
