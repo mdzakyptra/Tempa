@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { ALL_REPORTS_PATH, apiFetch, apiFetchPaginated } from '../lib/api'
+import { ALL_REPORTS_PATH, apiFetchPaginated } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
 import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
 import { CityMap, type CityMapMarker } from '../components/city-map'
@@ -20,15 +20,6 @@ function CardSkeleton() {
       </div>
     </div>
   )
-}
-
-//<---------- buildQueryString -------------->
-function buildQueryString(filter: ReportFilterValue, page: number) {
-  const params = new URLSearchParams()
-  if (filter.kawasan) params.set('kawasan', filter.kawasan)
-  if (filter.jenis_kerusakan) params.set('jenis_kerusakan', filter.jenis_kerusakan)
-  params.set('page', String(page))
-  return `?${params.toString()}`
 }
 
 //<---------- Antrean -------------->
@@ -59,30 +50,32 @@ export default function Antrean() {
     navigate(destination, { state: { backgroundLocation: location } })
   }
 
-  const {
-    data: paginated,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ['reports', filter.kawasan, filter.jenis_kerusakan, page],
-    queryFn: () => apiFetchPaginated<ReportListItem[]>(`/reports${buildQueryString(filter, page)}`),
+  // Satu request memuat daftar prioritas sekaligus titik peta. Dengan data
+  // saat ini (di bawah limit API 100), filter dan pagination dilakukan lokal
+  // supaya masuk ke Antrean tidak menjalankan query skor yang sama dua kali.
+  const { data: semuaLaporanResponse, isLoading, isError } = useQuery({
+    queryKey: ['reports', 'antrean'],
+    queryFn: () => apiFetchPaginated<ReportListItem[]>(ALL_REPORTS_PATH),
   })
-  const reports = paginated?.data
-  const meta = paginated?.meta
-
-  // Dipisah dari query daftar di atas: query ini SELALU tanpa filter/paginasi,
-  // cuma dipakai buat isi opsi dropdown kawasan supaya opsinya tidak ikut
-  // menyusut waktu user lagi mempersempit hasil atau pindah halaman.
-  const { data: semuaLaporan } = useQuery({
-    queryKey: ['reports', 'semua'],
-    queryFn: () => apiFetch<ReportListItem[]>(ALL_REPORTS_PATH),
-    staleTime: Infinity,
-  })
-  const kawasanOptions = [...new Set((semuaLaporan ?? []).map((r) => r.kawasan))].sort()
+  const semuaLaporan = semuaLaporanResponse?.data ?? []
+  const laporanTersaring = semuaLaporan
+    .filter((report) => !filter.kawasan || report.kawasan === filter.kawasan)
+    .filter((report) => !filter.jenis_kerusakan || report.jenis_kerusakan === filter.jenis_kerusakan)
+  const totalPages = Math.max(1, Math.ceil(laporanTersaring.length / 10))
+  const reports = semuaLaporanResponse ? laporanTersaring.slice((page - 1) * 10, page * 10) : undefined
+  const meta = semuaLaporanResponse
+    ? {
+        page,
+        limit: 10,
+        total: laporanTersaring.length,
+        totalPages,
+      }
+    : undefined
+  const kawasanOptions = [...new Set(semuaLaporan.map((report) => report.kawasan))].sort()
 
   const isFilterActive = filter.kawasan !== '' || filter.jenis_kerusakan !== ''
 
-  const markers: CityMapMarker[] = (semuaLaporan ?? [])
+  const markers: CityMapMarker[] = semuaLaporan
     .filter((report) => !filter.kawasan || report.kawasan === filter.kawasan)
     .filter((report) => !filter.jenis_kerusakan || report.jenis_kerusakan === filter.jenis_kerusakan)
     .filter((r): r is ReportListItem & { lat: number; lng: number } => r.lat !== null && r.lng !== null)
@@ -91,7 +84,7 @@ export default function Antrean() {
   return (
     <div className="bg-neutral-100 p-3 text-black sm:p-6">
       <div className="mx-auto mb-5 max-w-[1600px] px-1 sm:px-0">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">Antrean Kota</p>
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">Aspiraku</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Peta prioritas laporan</h1>
       </div>
 

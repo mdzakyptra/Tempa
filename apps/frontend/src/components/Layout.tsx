@@ -6,7 +6,6 @@ import { motion } from 'motion/react'
 const navItems = [
   { to: '/antrean', label: 'Antrean' },
   { to: '/metodologi', label: 'Metodologi' },
-  { to: '/auth', label: 'Masuk' },
   { to: '/panel-petugas', label: 'Panel Petugas' },
 ]
 
@@ -43,8 +42,8 @@ export default function Layout() {
         className="sticky top-0 z-50 border-b border-black/10 bg-white/80 backdrop-blur-xl"
       >
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
-          <NavLink to="/" className="shrink-0 text-lg font-black tracking-tighter">
-            Antrean<span className="text-neutral-400">.</span>Kota
+          <NavLink to="/" className="shrink-0">
+            <img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7 w-auto" />
           </NavLink>
 
           <ul className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-2">
@@ -71,12 +70,20 @@ export default function Layout() {
             ))}
           </ul>
 
-          <NavLink
-            to="/lapor-baru"
-            className="shrink-0 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-transform hover:scale-105"
-          >
-            Lapor Sekarang
-          </NavLink>
+          <div className="flex shrink-0 items-center gap-2">
+            <NavLink
+              to="/lapor-baru"
+              className="rounded-full border border-black/15 px-5 py-2 text-sm font-semibold text-black transition-colors hover:border-black/40 hover:bg-black/5"
+            >
+              Tambah Laporan
+            </NavLink>
+            <NavLink
+              to="/auth"
+              className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-transform hover:scale-105"
+            >
+              Masuk
+            </NavLink>
+          </div>
         </nav>
       </motion.header>
       <main className="flex-1">

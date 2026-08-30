@@ -55,7 +55,7 @@ export default function Navbar() {
         }`}
       >
         <a href="#top" className="text-lg font-black tracking-tighter">
-          Antrean<span className="text-neutral-500">.</span>Kota
+          Aspiraku
         </a>
 
         <ul className="hidden items-center gap-8 md:flex">

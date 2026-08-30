@@ -17,7 +17,7 @@ interface QueueAssistantProps {
 const INITIAL_MESSAGE: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
-  content: 'Halo! Tanyakan posisi atau alasan skor prioritas laporan di Antrean Kota.',
+  content: 'Halo! Tanyakan posisi atau alasan skor prioritas laporan di Aspiraku.',
 }
 
 //<---------- QueueAssistant ------------>
@@ -81,7 +81,7 @@ export default function QueueAssistant({ reportId }: QueueAssistantProps) {
     <div className="fixed right-4 bottom-4 z-50 sm:right-6 sm:bottom-6">
       {isOpen && (
         <section
-          aria-label="Asisten Antrean Kota"
+          aria-label="Asisten Aspiraku"
           className="mb-3 flex h-[min(32rem,calc(100dvh-7rem))] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl"
         >
           <header className="flex items-start justify-between gap-3 border-b border-neutral-100 bg-neutral-900 px-4 py-3 text-white">

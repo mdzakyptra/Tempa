@@ -25,13 +25,13 @@ function App() {
     <>
       <Routes location={backgroundLocation ?? location}>
         <Route path="/" element={<Beranda />} />
+        <Route path="/auth" element={<Auth />} />
         <Route element={<Layout />}>
           <Route path="/antrean" element={<Antrean />} />
           <Route path="/laporan/:id" element={<DetailLaporan />} />
           <Route path="/lapor-baru" element={<LaporBaru />} />
           <Route path="/lapor-baru/hasil/:id" element={<HasilLapor />} />
           <Route path="/metodologi" element={<Metodologi />} />
-          <Route path="/auth" element={<Auth />} />
           <Route path="/panel-petugas" element={<PanelPetugas />} />
           <Route path="*" element={<NotFound />} />
         </Route>
