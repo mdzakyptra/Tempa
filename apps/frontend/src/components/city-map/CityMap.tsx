@@ -62,6 +62,13 @@ function metersToPixelsAtLat(meters: number, lat: number, zoom: number) {
 // `zones !== prevZones` check below, causing an infinite render loop.
 const NO_ZONES: CityMapZone[] = []
 
+//<---------- boundsFromMarkers -------------->
+function boundsFromMarkers(markers: CityMapMarker[]): mapboxgl.LngLatBounds {
+  const bounds = new mapboxgl.LngLatBounds([markers[0].lng, markers[0].lat], [markers[0].lng, markers[0].lat])
+  for (const marker of markers) bounds.extend([marker.lng, marker.lat])
+  return bounds
+}
+
 //<---------- CityMap -------------->
 // Mapbox GL swap-in for the old Leaflet renderer — same props, same
 // FlyTo-on-center-change and zone click-to-expand behavior, but pitched
@@ -112,11 +119,19 @@ export default function CityMap({
     const container = containerRef.current
     if (!container || !MAPBOX_TOKEN) return
 
+    // Lebih dari 1 marker & nggak ada `center` eksplisit — fit ke semua
+    // marker (mis. Antrean, laporan tersebar se-Indonesia), bukan zoom ke
+    // marker pertama doang (biasanya laporan skor tertinggi, kebetulan
+    // numpuk di satu kota bikin peta serasa "ke-hardcode" ke situ).
+    const initialView =
+      !center && visibleMarkers.length > 1
+        ? { bounds: boundsFromMarkers(visibleMarkers), fitBoundsOptions: { padding: 60, maxZoom: 12 } }
+        : { center: [resolvedCenter[1], resolvedCenter[0]] as [number, number], zoom: resolvedZoom }
+
     const map = new mapboxgl.Map({
       container,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [resolvedCenter[1], resolvedCenter[0]],
-      zoom: resolvedZoom,
+      ...initialView,
       pitch: 55,
       bearing: -12,
       antialias: true,
@@ -185,16 +200,33 @@ export default function CityMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // FlyTo — same "recenter smoothly when center/zoom prop changes" behavior
-  // the old Leaflet <FlyTo> gave us.
+  // FlyTo/fitBounds — recenter smoothly when the resolved view changes.
+  // Lebih dari 1 marker tanpa `center` eksplisit → fit ke semua marker
+  // (dipakai bareng `boundsSignature`, primitive string, biar effect ini
+  // nggak keulang tiap render cuma gara-gara `markers` array baru dari
+  // parent yang nggak di-memo).
   const [resolvedLat, resolvedLng] = resolvedCenter
+  const boundsSignature =
+    !center && visibleMarkers.length > 1
+      ? visibleMarkers.map((m) => `${m.lat.toFixed(3)},${m.lng.toFixed(3)}`).join('|')
+      : ''
+
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    const fly = () => map.flyTo({ center: [resolvedLng, resolvedLat], zoom: resolvedZoom, duration: 1200 })
-    if (map.loaded()) fly()
-    else map.once('load', fly)
-  }, [resolvedLat, resolvedLng, resolvedZoom])
+
+    const applyView = () => {
+      if (!center && visibleMarkers.length > 1) {
+        map.fitBounds(boundsFromMarkers(visibleMarkers), { padding: 60, duration: 1200, maxZoom: 12 })
+      } else {
+        map.flyTo({ center: [resolvedLng, resolvedLat], zoom: resolvedZoom, duration: 1200 })
+      }
+    }
+
+    if (map.loaded()) applyView()
+    else map.once('load', applyView)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedLat, resolvedLng, resolvedZoom, boundsSignature, center])
 
   // Zone circles — re-project radius in pixels on every zoom tick so it
   // still reads as a fixed real-world radius while pitched/zoomed.
