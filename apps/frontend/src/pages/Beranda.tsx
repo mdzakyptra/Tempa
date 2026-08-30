@@ -8,8 +8,8 @@ import MapReport from '../components/landing/sections/MapReport'
 import WorkStack from '../components/landing/sections/WorkStack'
 import Process from '../components/landing/sections/Process'
 import Stats from '../components/landing/sections/Stats'
-import CTA from '../components/landing/sections/CTA'
 import Footer from '../components/landing/sections/Footer'
+import HabitFaqScroller from '../components/landing/sections/HabitFaqScroller'
 import { QueueAssistant } from '../components/queue-assistant'
 
 
@@ -31,7 +31,7 @@ export default function Beranda() {
         <WorkStack />
         <Process />
         <Stats />
-        <CTA />
+        <HabitFaqScroller />
       </main>
 
       <Footer />
