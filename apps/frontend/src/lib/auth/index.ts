@@ -27,6 +27,11 @@ export function getAccessToken() {
   return accessToken
 }
 
+//<---------- hasStoredSession ------------>
+export function hasStoredSession() {
+  return accessToken !== null || sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) !== null
+}
+
 //<---------- clearTokens ------------>
 export function clearTokens() {
   accessToken = null
