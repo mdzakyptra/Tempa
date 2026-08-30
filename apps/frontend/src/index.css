@@ -96,6 +96,21 @@
   animation-delay: 0.2s;
 }
 
+@keyframes detail-overlay-enter {
+  from {
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.detail-overlay-panel {
+  animation: detail-overlay-enter 0.35s ease-out both;
+}
+
 .scroller-mask {
   mask-image: linear-gradient(to right, transparent, black 3%, black 97%, transparent);
 }
@@ -103,7 +118,8 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-scroll-horizontal,
   .animate-scroll-horizontal-reverse,
-  .animate-fade-in-up {
+  .animate-fade-in-up,
+  .detail-overlay-panel {
     animation: none;
   }
 }
