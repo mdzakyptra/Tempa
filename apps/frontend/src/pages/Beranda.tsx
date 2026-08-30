@@ -3,6 +3,7 @@ import CustomCursor from '../components/landing/animations/CustomCursor'
 import Navbar from '../components/landing/sections/Navbar'
 import Hero from '../components/landing/sections/Hero'
 import WorkStack from '../components/landing/sections/WorkStack'
+import MapReport from '../components/landing/sections/MapReport'
 import Footer from '../components/landing/sections/Footer'
 import HabitFaqScroller from '../components/landing/sections/HabitFaqScroller'
 
@@ -20,6 +21,7 @@ export default function Beranda() {
       <main className="relative">
         <Hero />
         <WorkStack />
+        <MapReport />
         <HabitFaqScroller />
       </main>
 
