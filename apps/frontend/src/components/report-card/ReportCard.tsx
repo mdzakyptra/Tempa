@@ -26,6 +26,7 @@ interface ReportCardProps {
   report: ReportListItem
   /** Urutan tampil (1-based) — dicetak sebagai indeks angka besar di sisi kartu. */
   index: number
+  onSelect?: () => void
 }
 
 const TINGKAT_BAHAYA_DOT: Record<ReportListItem['tingkat_bahaya'], string> = {
@@ -43,10 +44,18 @@ function skorBadgeStyle(skor: number) {
 }
 
 //<---------- ReportCard -------------->
-export default function ReportCard({ report, index }: ReportCardProps) {
+export default function ReportCard({ report, index, onSelect }: ReportCardProps) {
   return (
     <Link
       to={`/laporan/${report.id}`}
+      onClick={
+        onSelect
+          ? (event) => {
+              event.preventDefault()
+              onSelect()
+            }
+          : undefined
+      }
       className="group relative flex gap-4 overflow-hidden rounded-2xl border border-black/10 bg-white p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/20 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.25)] sm:p-6"
     >
       <span
