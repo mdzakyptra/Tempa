@@ -31,6 +31,12 @@ export default function GlobeMapTransition() {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>('globe')
   const [mapTarget, setMapTarget] = useState<MapTarget | null>(null)
+  // Kawasan opened by clicking a hotzone circle *inside* the already-zoomed
+  // map — separate from mapTarget.kawasan (only set for a single-member
+  // cluster at dive time). Lets "back" collapse just that zone instead of
+  // re-diving from the globe.
+  const [openedKawasan, setOpenedKawasan] = useState<string | null>(null)
+  const [collapseCounter, setCollapseCounter] = useState(0)
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<GeocodeResult[]>([])
@@ -98,6 +104,7 @@ export default function GlobeMapTransition() {
   // one continuous zoom instead of a hard cut to a different page/component.
   function diveTo(lng: number, lat: number, scaleMultiplier: number, target: MapTarget) {
     setMapTarget(target)
+    setOpenedKawasan(null)
     setPhase('diving')
 
     // A backgrounded/throttled tab can suspend the rAF-driven d3 transition
@@ -159,11 +166,31 @@ export default function GlobeMapTransition() {
   }
 
   //<---------- handleReset -------------->
+  // Mirrors diveTo in reverse: flip to 'globe' first so the crossfade
+  // reveals the globe still zoomed in on the dive target, THEN animate its
+  // zoom-out — same settle/timeout-fallback pattern as the dive-in.
   function handleReset() {
     setPhase('globe')
-    setMapTarget(null)
+    setOpenedKawasan(null)
     setQuery('')
-    globeRef.current?.reset({ duration: TRANSITION_MS })
+
+    let settled = false
+    const settle = () => {
+      if (settled) return
+      settled = true
+      setMapTarget(null)
+    }
+
+    globeRef.current?.reset({ duration: TRANSITION_MS, onComplete: settle })
+    window.setTimeout(settle, TRANSITION_MS + 400)
+  }
+
+  //<---------- handleCollapseKawasan -------------->
+  // "Back" from a single opened zone circle — stays zoomed into the same
+  // map area, just hides that kawasan's revealed markers again.
+  function handleCollapseKawasan() {
+    setOpenedKawasan(null)
+    setCollapseCounter((count) => count + 1)
   }
 
   return (
@@ -226,24 +253,43 @@ export default function GlobeMapTransition() {
               center={mapTarget.center}
               zoom={mapTarget.zoom}
               onMarkerClick={(marker) => navigate(`/laporan/${marker.id}`)}
+              onZoneClick={(kawasan, expanded) => setOpenedKawasan(expanded ? kawasan : null)}
+              resetExpandTrigger={collapseCounter}
             />
           </div>
         )}
       </div>
 
       {phase === 'map' && (
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <button type="button" onClick={handleReset} className="text-neutral-500 hover:text-neutral-900">
-            ← Lihat globe lagi
-          </button>
-          {mapTarget?.kawasan && (
+        <div className="mt-4 space-y-2 text-sm">
+          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-neutral-50 px-3 py-2">
+            <span className="flex items-center gap-2 font-medium">
+              {openedKawasan && (
+                <button
+                  type="button"
+                  onClick={handleCollapseKawasan}
+                  aria-label="Kembali ke semua kawasan"
+                  className="text-neutral-500 hover:text-neutral-900"
+                >
+                  ←
+                </button>
+              )}
+              {openedKawasan ?? mapTarget?.kawasan ?? 'Semua kawasan'}
+            </span>
             <Link
-              to={`/antrean?kawasan=${encodeURIComponent(mapTarget.kawasan)}`}
+              to={
+                openedKawasan ?? mapTarget?.kawasan
+                  ? `/antrean?kawasan=${encodeURIComponent(openedKawasan ?? mapTarget?.kawasan ?? '')}`
+                  : '/antrean'
+              }
               className="font-medium text-blue-600 hover:underline"
             >
               Lihat semua di Antrean →
             </Link>
-          )}
+          </div>
+          <button type="button" onClick={handleReset} className="text-neutral-500 hover:text-neutral-900">
+            ← Lihat globe lagi
+          </button>
         </div>
       )}
     </div>

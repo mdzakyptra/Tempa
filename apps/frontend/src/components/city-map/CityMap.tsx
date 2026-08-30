@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react'
-import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { useEffect, useRef, useState } from 'react'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 
-// Vite/webpack break Leaflet's default marker icon path resolution — point it
-// at the bundled asset URLs instead.
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
-L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow })
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
+if (MAPBOX_TOKEN) mapboxgl.accessToken = MAPBOX_TOKEN
 
 export interface CityMapMarker {
   id: string
@@ -36,6 +30,10 @@ interface CityMapProps {
   center?: [number, number]
   zoom?: number
   onMarkerClick?: (marker: CityMapMarker) => void
+  /** Fired whenever a hotzone circle is clicked, with whether it's now expanded (markers revealed) or collapsed. */
+  onZoneClick?: (kawasan: string, expanded: boolean) => void
+  /** Bump this to force-collapse all expanded zones without changing `zones` itself (e.g. a "back" button). */
+  resetExpandTrigger?: number
   className?: string
 }
 
@@ -53,16 +51,10 @@ function zoneRadiusMeters(count: number) {
   return Math.min(180 + count * 35, 600)
 }
 
-//<---------- FlyTo -------------->
-function FlyTo({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap()
-  const [lat, lng] = center
-
-  useEffect(() => {
-    map.flyTo([lat, lng], zoom, { duration: 1.2 })
-  }, [lat, lng, zoom, map])
-
-  return null
+// metersToPixelsAtLat — GeoJSON circles need a screen-space radius, so a
+// literal-meter circle has to be reprojected on every zoom tick.
+function metersToPixelsAtLat(meters: number, lat: number, zoom: number) {
+  return meters / (0.075 * Math.cos((lat * Math.PI) / 180) * 2 ** (24 - zoom))
 }
 
 // Stable reference for the "no zones" default — a literal `[]` default
@@ -71,9 +63,29 @@ function FlyTo({ center, zoom }: { center: [number, number]; zoom: number }) {
 const NO_ZONES: CityMapZone[] = []
 
 //<---------- CityMap -------------->
-export default function CityMap({ markers, zones = NO_ZONES, center, zoom = 15, onMarkerClick, className = 'h-full w-full' }: CityMapProps) {
+// Mapbox GL swap-in for the old Leaflet renderer — same props, same
+// FlyTo-on-center-change and zone click-to-expand behavior, but pitched
+// 3D buildings instead of a flat raster tile.
+export default function CityMap({
+  markers,
+  zones = NO_ZONES,
+  center,
+  zoom = 15,
+  onMarkerClick,
+  onZoneClick,
+  resetExpandTrigger,
+  className = 'h-full w-full',
+}: CityMapProps) {
   const resolvedCenter: [number, number] = center ?? (markers[0] ? [markers[0].lat, markers[0].lng] : [-2.5, 118])
   const resolvedZoom = center || markers.length > 0 ? zoom : 4
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+  const markerObjectsRef = useRef<mapboxgl.Marker[]>([])
+  const onMarkerClickRef = useRef(onMarkerClick)
+  onMarkerClickRef.current = onMarkerClick
+  const onZoneClickRef = useRef(onZoneClick)
+  onZoneClickRef.current = onZoneClick
 
   // Which kawasan the viewer has clicked open — reset whenever a fresh set of
   // zones comes in (a new dive), so an old dive's revealed points don't leak
@@ -85,47 +97,166 @@ export default function CityMap({ markers, zones = NO_ZONES, center, zoom = 15, 
     setExpandedKawasan(new Set())
   }
 
+  // External "collapse everything" trigger (e.g. a back button) — same
+  // reset, just driven by a prop bump instead of a `zones` change.
+  const [prevResetTrigger, setPrevResetTrigger] = useState(resetExpandTrigger)
+  if (resetExpandTrigger !== prevResetTrigger) {
+    setPrevResetTrigger(resetExpandTrigger)
+    setExpandedKawasan(new Set())
+  }
+
   const visibleMarkers = zones.length > 0 ? markers.filter((marker) => marker.kawasan && expandedKawasan.has(marker.kawasan)) : markers
 
-  return (
-    <MapContainer center={resolvedCenter} zoom={resolvedZoom} scrollWheelZoom className={className}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <FlyTo center={resolvedCenter} zoom={resolvedZoom} />
+  // Mount once — style/terrain/pitch set up here, torn down on unmount.
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || !MAPBOX_TOKEN) return
 
-      {zones.map((zone) => (
-        <Circle
-          key={zone.kawasan}
-          center={[zone.lat, zone.lng]}
-          radius={zoneRadiusMeters(zone.count)}
-          pathOptions={{ color: zoneColor(zone.count), fillColor: zoneColor(zone.count), fillOpacity: 0.18, opacity: 0.5, weight: 1.5 }}
-          eventHandlers={{
-            click: () =>
-              setExpandedKawasan((prev) => {
-                const next = new Set(prev)
-                if (next.has(zone.kawasan)) next.delete(zone.kawasan)
-                else next.add(zone.kawasan)
-                return next
-              }),
-          }}
-        >
-          <Popup>
-            {zone.kawasan} — {zone.count} laporan
-          </Popup>
-        </Circle>
-      ))}
+    const map = new mapboxgl.Map({
+      container,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [resolvedCenter[1], resolvedCenter[0]],
+      zoom: resolvedZoom,
+      pitch: 55,
+      bearing: -12,
+      antialias: true,
+    })
+    mapRef.current = map
 
-      {visibleMarkers.map((marker) => (
-        <Marker
-          key={marker.id}
-          position={[marker.lat, marker.lng]}
-          eventHandlers={onMarkerClick ? { click: () => onMarkerClick(marker) } : undefined}
-        >
-          {marker.label && <Popup>{marker.label}</Popup>}
-        </Marker>
-      ))}
-    </MapContainer>
-  )
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-left')
+
+    map.on('load', () => {
+      // 3D building extrusions — the actual "3D" in this map, not just tilt.
+      const layers = map.getStyle()?.layers
+      const labelLayerId = layers?.find((l) => l.type === 'symbol' && l.layout?.['text-field'])?.id
+      map.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#d4d4d4',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.75,
+          },
+        },
+        labelLayerId,
+      )
+
+      map.addSource('zones', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({
+        id: 'zones-fill',
+        type: 'circle',
+        source: 'zones',
+        paint: {
+          'circle-radius': ['get', 'radiusPx'],
+          'circle-color': ['get', 'color'],
+          'circle-opacity': 0.18,
+          'circle-stroke-color': ['get', 'color'],
+          'circle-stroke-opacity': 0.5,
+          'circle-stroke-width': 1.5,
+        },
+      })
+
+      map.on('click', 'zones-fill', (event) => {
+        const kawasan = event.features?.[0]?.properties?.kawasan as string | undefined
+        if (!kawasan) return
+        setExpandedKawasan((prev) => {
+          const next = new Set(prev)
+          const expanded = !next.has(kawasan)
+          if (expanded) next.add(kawasan)
+          else next.delete(kawasan)
+          onZoneClickRef.current?.(kawasan, expanded)
+          return next
+        })
+      })
+      map.on('mouseenter', 'zones-fill', () => (map.getCanvas().style.cursor = 'pointer'))
+      map.on('mouseleave', 'zones-fill', () => (map.getCanvas().style.cursor = ''))
+    })
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // FlyTo — same "recenter smoothly when center/zoom prop changes" behavior
+  // the old Leaflet <FlyTo> gave us.
+  const [resolvedLat, resolvedLng] = resolvedCenter
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const fly = () => map.flyTo({ center: [resolvedLng, resolvedLat], zoom: resolvedZoom, duration: 1200 })
+    if (map.loaded()) fly()
+    else map.once('load', fly)
+  }, [resolvedLat, resolvedLng, resolvedZoom])
+
+  // Zone circles — re-project radius in pixels on every zoom tick so it
+  // still reads as a fixed real-world radius while pitched/zoomed.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const setZoneData = () => {
+      const source = map.getSource('zones') as mapboxgl.GeoJSONSource | undefined
+      if (!source) return
+      const currentZoom = map.getZoom()
+      source.setData({
+        type: 'FeatureCollection',
+        features: zones.map((zone) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [zone.lng, zone.lat] },
+          properties: {
+            kawasan: zone.kawasan,
+            color: zoneColor(zone.count),
+            radiusPx: metersToPixelsAtLat(zoneRadiusMeters(zone.count), zone.lat, currentZoom),
+          },
+        })),
+      })
+    }
+
+    if (map.loaded()) setZoneData()
+    else map.once('load', setZoneData)
+    map.on('zoom', setZoneData)
+    return () => {
+      map.off('zoom', setZoneData)
+    }
+  }, [zones])
+
+  // Markers — plain DOM mapboxgl.Marker (no React reconciliation needed,
+  // list is short and swaps wholesale on expand/collapse).
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const attach = () => {
+      markerObjectsRef.current.forEach((m) => m.remove())
+      markerObjectsRef.current = visibleMarkers.map((marker) => {
+        const mbMarker = new mapboxgl.Marker({ color: '#2563eb' }).setLngLat([marker.lng, marker.lat]).addTo(map)
+        if (marker.label) mbMarker.setPopup(new mapboxgl.Popup({ offset: 24 }).setText(marker.label))
+        mbMarker.getElement().addEventListener('click', () => onMarkerClickRef.current?.(marker))
+        return mbMarker
+      })
+    }
+
+    if (map.loaded()) attach()
+    else map.once('load', attach)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleMarkers])
+
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className={`flex items-center justify-center bg-neutral-50 p-4 text-center text-sm text-neutral-500 ${className}`}>
+        Peta belum aktif — set <code className="mx-1 rounded bg-neutral-200 px-1 py-0.5">VITE_MAPBOX_TOKEN</code> di{' '}
+        <code className="mx-1 rounded bg-neutral-200 px-1 py-0.5">.env</code>.
+      </div>
+    )
+  }
+
+  return <div ref={containerRef} className={className} />
 }
