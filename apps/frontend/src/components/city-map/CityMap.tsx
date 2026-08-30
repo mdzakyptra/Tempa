@@ -65,8 +65,10 @@ function FlyTo({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null
 }
 
+const NO_ZONES: CityMapZone[] = []
+
 //<---------- CityMap -------------->
-export default function CityMap({ markers, zones = [], center, zoom = 15, onMarkerClick, className = 'h-full w-full' }: CityMapProps) {
+export default function CityMap({ markers, zones = NO_ZONES, center, zoom = 15, onMarkerClick, className = 'h-full w-full' }: CityMapProps) {
   const resolvedCenter: [number, number] = center ?? (markers[0] ? [markers[0].lat, markers[0].lng] : [-2.5, 118])
   const resolvedZoom = center || markers.length > 0 ? zoom : 4
 
