@@ -35,6 +35,12 @@ export class ReportListItemDto {
   @ApiProperty()
   kawasan: string;
 
+  @ApiProperty({ nullable: true, example: -6.9147 })
+  lat: number | null;
+
+  @ApiProperty({ nullable: true, example: 107.6098 })
+  lng: number | null;
+
   @ApiProperty({ enum: JenisKerusakan })
   jenis_kerusakan: JenisKerusakan;
 

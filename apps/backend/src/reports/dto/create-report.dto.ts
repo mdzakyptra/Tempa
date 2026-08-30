@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsString, Min, MinLength } from 'class-validator';
+import { IsEnum, IsInt, IsLatitude, IsLongitude, IsString, Min, MinLength } from 'class-validator';
 import { JenisKerusakan, TingkatBahaya } from '../../../generated/prisma/client';
 
 
@@ -22,6 +22,14 @@ export class CreateReportDto {
   @IsString()
   @MinLength(3)
   kawasan: string;
+
+  @ApiProperty({ example: -6.9147 })
+  @IsLatitude()
+  lat: number;
+
+  @ApiProperty({ example: 107.6098 })
+  @IsLongitude()
+  lng: number;
 
   @ApiProperty({ enum: JenisKerusakan, example: JenisKerusakan.jalan })
   @IsEnum(JenisKerusakan)

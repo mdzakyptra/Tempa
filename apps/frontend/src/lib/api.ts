@@ -1,4 +1,13 @@
+import { getAccessToken, getValidAccessToken, refreshAccessToken } from './auth'
+
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+// GET /reports paginate ke 10 item per halaman secara default (lihat
+// ListReportsQueryDto di BE, limit max 500). Beberapa tempat (globe, dropdown
+// kawasan, hitung posisi antrean setelah lapor) butuh SEMUA laporan aktif,
+// bukan cuma satu halaman — pakai path ini, bukan '/reports' polos.
+export const ALL_REPORTS_PATH = '/reports?limit=500'
 
 // Envelope sukses/gagal dari backend NestJS — lihat ApiResponseDto &
 // ApiErrorResponseDto di apps/backend/src/common/dto/.
@@ -16,6 +25,21 @@ interface ApiErrorEnvelope {
   timestamp: string
 }
 
+export interface PaginationMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+interface ApiPaginatedEnvelope<T> extends ApiSuccessEnvelope<T> {
+  meta: PaginationMeta
+}
+
+interface ApiRequestOptions {
+  retryAfterRefresh?: boolean
+}
+
 //<---------- ApiError -------------->
 export class ApiError extends Error {
   statusCode: number
@@ -31,12 +55,35 @@ export class ApiError extends Error {
 
 //<---------- apiFetch -------------->
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const { body } = await requestApi<T>(path, init)
+  return body.data as T
+}
+
+//<---------- apiFetchPaginated -------------->
+// Sama kayak apiFetch, tapi juga ngambil `meta` dari envelope — dipakai
+// endpoint yang di-paginate backend-nya (lihat PaginationMetaDto di BE).
+export async function apiFetchPaginated<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ data: T; meta: PaginationMeta }> {
+  const { body } = await requestApi<T>(path, init)
+  return { data: body.data as T, meta: body.meta }
+}
+
+//<---------- requestApi ------------>
+async function requestApi<T>(
+  path: string,
+  init?: RequestInit,
+  options: ApiRequestOptions = {},
+): Promise<{ body: ApiPaginatedEnvelope<T> }> {
   let response: Response
   try {
+    const token = await getValidAccessToken()
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init?.headers,
       },
     })
@@ -44,7 +91,12 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError('Tidak bisa terhubung ke server', 0)
   }
 
-  let body: ApiSuccessEnvelope<T> | ApiErrorEnvelope
+  if (response.status === 401 && !options.retryAfterRefresh && getAccessToken()) {
+    const refreshedToken = await refreshAccessToken()
+    if (refreshedToken) return requestApi<T>(path, init, { retryAfterRefresh: true })
+  }
+
+  let body: ApiPaginatedEnvelope<T> | ApiErrorEnvelope
   try {
     body = await response.json()
   } catch {
@@ -56,7 +108,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError(errorBody.message, errorBody.statusCode ?? response.status, errorBody.path)
   }
 
-  return (body as ApiSuccessEnvelope<T>).data as T
+  return { body: body as ApiPaginatedEnvelope<T> }
 }
 
 //<---------- uploadFileToPresignedUrl -------------->

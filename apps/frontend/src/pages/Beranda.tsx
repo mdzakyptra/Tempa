@@ -7,16 +7,16 @@ import Manifesto from '../components/landing/sections/Manifesto'
 import MapReport from '../components/landing/sections/MapReport'
 import WorkStack from '../components/landing/sections/WorkStack'
 import Process from '../components/landing/sections/Process'
-import Gallery from '../components/landing/sections/Gallery'
 import Stats from '../components/landing/sections/Stats'
-import CTA from '../components/landing/sections/CTA'
 import Footer from '../components/landing/sections/Footer'
+import HabitFaqScroller from '../components/landing/sections/HabitFaqScroller'
+import { QueueAssistant } from '../components/queue-assistant'
 
 
 //<---------- Beranda -------------->
 export default function Beranda() {
   return (
-    <div className="bg-white text-black antialiased">
+    <div className="font-display bg-white text-black antialiased">
       <ScrollProgress />
       <CustomCursor />
       <div className="grain-overlay" aria-hidden />
@@ -30,12 +30,12 @@ export default function Beranda() {
         <MapReport />
         <WorkStack />
         <Process />
-        <Gallery />
         <Stats />
-        <CTA />
+        <HabitFaqScroller />
       </main>
 
       <Footer />
+      <QueueAssistant />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import {
   JenisKerusakan,
   TingkatBahaya,
 } from '../generated/prisma/client';
+import { NATIONWIDE_REPORTS } from './seed-data/nationwide-reports';
 
 
 const prisma = new PrismaClient({
@@ -28,7 +29,27 @@ const KAWASAN_LIST = [
   'Kelurahan Gedebage',
 ] as const;
 
-interface ReportSeed {
+// Koordinat titik tengah tiap kawasan (Bandung asli) — buat isi lat/lng (JEK-45)
+// di data seed, biar peta Antrean/Detail Laporan langsung ada penanda buat dicoba.
+const KAWASAN_COORDS: Record<(typeof KAWASAN_LIST)[number], [number, number]> = {
+  'Kelurahan Sukajadi': [-6.8898, 107.5806],
+  'Kelurahan Cibeunying': [-6.9007, 107.6236],
+  'Kelurahan Antapani': [-6.9159, 107.6553],
+  'Kelurahan Kopo': [-6.9482, 107.5852],
+  'Kelurahan Dago': [-6.8807, 107.6133],
+  'Kelurahan Cicadas': [-6.9134, 107.639],
+  'Kelurahan Buah Batu': [-6.9557, 107.6367],
+  'Kelurahan Gedebage': [-6.9508, 107.6864],
+};
+
+//<---------- jitterCoord -------------->
+// Sebaran kecil (~±500m) biar laporan sekawasan gak numpuk persis di titik yang sama.
+function jitterCoord([lat, lng]: [number, number]): [number, number] {
+  const jitter = () => (Math.random() - 0.5) * 0.01;
+  return [lat + jitter(), lng + jitter()];
+}
+
+export interface ReportSeed {
   judul: string;
   deskripsi: string;
   kawasan: string;
@@ -37,6 +58,12 @@ interface ReportSeed {
   estimasi_terdampak: number;
   jalur_vital: boolean;
   dibuat_pada: Date;
+  // Opsional — dipakai laporan di luar KAWASAN_LIST (kota lain se-Indonesia,
+  // lihat seed-data/nationwide-reports.ts) yang nggak punya entri di
+  // KAWASAN_COORDS. Kalau diisi, dipakai langsung (nggak di-jitter dari
+  // KAWASAN_COORDS).
+  lat?: number;
+  lng?: number;
 }
 
 // Template judul+deskripsi per jenis kerusakan, dipakai buat generate laporan acak
@@ -379,14 +406,22 @@ async function seedProfiles(): Promise<{ warga: string[]; petugas: string[] }> {
 async function seedReports(wargaIds: string[]): Promise<string[]> {
   const pairedReports = DUPLICATE_PAIRS.flat();
   const randomReports = buildRandomReports(40);
-  const allReports = [...pairedReports, ...randomReports];
+  const allReports = [...pairedReports, ...randomReports, ...NATIONWIDE_REPORTS];
   const reportIds: string[] = [];
 
   for (const report of allReports) {
+    // NATIONWIDE_REPORTS punya lat/lng eksplisit (kota di luar KAWASAN_LIST,
+    // nggak ada di KAWASAN_COORDS) — pakai langsung, nggak usah di-jitter.
+    const [lat, lng] =
+      report.lat !== undefined && report.lng !== undefined
+        ? [report.lat, report.lng]
+        : jitterCoord(KAWASAN_COORDS[report.kawasan as keyof typeof KAWASAN_COORDS]);
     const created = await prisma.report.create({
       data: {
         id: randomUUID(),
         ...report,
+        lat,
+        lng,
         dibuat_oleh: pick(wargaIds),
         // Embedding sengaja dibiarkan null di sini — JEK-19 (deteksi embedding)
         // belum selesai saat seed ini ditulis. Begitu endpoint AI-nya siap,

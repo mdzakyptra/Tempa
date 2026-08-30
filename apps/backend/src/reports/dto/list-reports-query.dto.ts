@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import { JenisKerusakan } from '../../../generated/prisma/client';
 
 
@@ -16,4 +17,19 @@ export class ListReportsQueryDto {
   @IsOptional()
   @IsEnum(JenisKerusakan)
   jenis_kerusakan?: JenisKerusakan;
+
+  @ApiPropertyOptional({ example: 1, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @ApiPropertyOptional({ example: 10, default: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  limit?: number = 10;
 }

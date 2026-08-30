@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -33,6 +34,8 @@ interface ReportScoredRow {
   judul: string;
   deskripsi: string;
   kawasan: string;
+  lat: number | null;
+  lng: number | null;
   jenis_kerusakan: JenisKerusakan;
   tingkat_bahaya: TingkatBahaya;
   estimasi_terdampak: number;
@@ -83,6 +86,8 @@ export class ReportsService {
         judul: dto.judul,
         deskripsi: dto.deskripsi,
         kawasan: dto.kawasan,
+        lat: dto.lat,
+        lng: dto.lng,
         jenis_kerusakan: dto.jenis_kerusakan,
         tingkat_bahaya: dto.tingkat_bahaya,
         estimasi_terdampak: dto.estimasi_terdampak,
@@ -114,7 +119,21 @@ export class ReportsService {
   }
 
   //<---------- findAll -------------->
+  // LIMIT/OFFSET, sama kayak WHERE (lihat catatan di scoredReportsCte),
+  // ditempel SETELAH CTE — normalisasi komponen skor tetap dihitung
+  // terhadap seluruh tabel, bukan cuma satu halaman.
+  //
+  // Paginasi cuma aktif kalau page/limit eksplisit ke-set. Lewat HTTP,
+  // ListReportsQueryDto SELALU punya nilai (default page=1/limit=10 dari
+  // ValidationPipe transform:true). Pemanggil internal (AiAssistantService,
+  // butuh SELURUH antrean buat hitung posisi_antrean yang benar) lewat
+  // objek literal `{}` — page/limit-nya tetap undefined, jadi diambil semua.
   async findAll(filter: ListReportsQueryDto) {
+    const isPaginated = filter.page !== undefined || filter.limit !== undefined;
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 10;
+    const offset = (page - 1) * limit;
+
     const conditions: Prisma.Sql[] = [];
     if (filter.kawasan) {
       conditions.push(Prisma.sql`kawasan = ${filter.kawasan}`);
@@ -128,14 +147,71 @@ export class ReportsService {
       conditions.length > 0
         ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
         : Prisma.empty;
+    const limitOffset = isPaginated
+      ? Prisma.sql`LIMIT ${limit} OFFSET ${offset}`
+      : Prisma.empty;
 
-    const rows = await this.prisma.$queryRaw<ReportScoredRow[]>`
-      ${this.scoredReportsCte()}
-      ${where}
-      ORDER BY skor DESC, dibuat_pada ASC
-    `;
+    const [rows, [{ total }]] = await this.withDatabaseRetry(() =>
+      Promise.all([
+        this.prisma.$queryRaw<ReportScoredRow[]>`
+          ${this.scoredReportsCte()}
+          ${where}
+          ORDER BY skor DESC, dibuat_pada ASC
+          ${limitOffset}
+        `,
+        this.prisma.$queryRaw<{ total: number }[]>`
+          SELECT COUNT(*)::int AS total FROM reports
+          WHERE digabung_ke_id IS NULL
+          ${conditions.length > 0 ? Prisma.sql`AND ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+        `,
+      ]),
+    );
 
-    return rows.map((row) => this.toListItem(row));
+    return {
+      items: rows.map((row) => this.toListItem(row)),
+      meta: isPaginated
+        ? { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) }
+        : { page: 1, limit: total, total, totalPages: 1 },
+    };
+  }
+
+  //<---------- withDatabaseRetry ------------>
+  private async withDatabaseRetry<T>(operation: () => Promise<T>): Promise<T> {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        return await operation();
+      } catch (error) {
+        const isTransient = this.isTransientDatabaseError(error);
+        if (!isTransient || attempt === maxAttempts) {
+          if (isTransient) {
+            throw new ServiceUnavailableException(
+              'Database sedang tidak dapat dihubungi. Silakan coba lagi.',
+            );
+          }
+          throw error;
+        }
+
+        await new Promise<void>((resolve) => setTimeout(resolve, attempt * 250));
+      }
+    }
+
+    throw new ServiceUnavailableException(
+      'Database sedang tidak dapat dihubungi. Silakan coba lagi.',
+    );
+  }
+
+  //<---------- isTransientDatabaseError ------------>
+  private isTransientDatabaseError(error: unknown): boolean {
+    let current: unknown = error;
+
+    for (let depth = 0; depth < 3 && current instanceof Error; depth += 1) {
+      if (current.message.includes('EAI_AGAIN')) return true;
+      current = current.cause;
+    }
+
+    return false;
   }
 
   //<---------- findOne -------------->
@@ -202,6 +278,17 @@ export class ReportsService {
     }
 
     const literal = `[${vector.join(',')}]`;
+
+    // JEK-58: sempat dicoba refactor bentuk CTE (hitung embedding <=> literal
+    // sekali, bukan 3x) dengan asumsi lebih murah — tapi diukur pakai
+    // EXPLAIN ANALYZE di data 5000 baris, hasilnya malah KONSISTEN lebih
+    // lambat (~9ms vs ~6-7ms, buffer hit ~2x lipat, diulang 2x biar bukan
+    // noise). Sebabnya: WHERE (cocok_atribut OR embedding_check) di bentuk
+    // ASLI ini manfaatin short-circuit OR — baris yang cocok_atribut TRUE
+    // (kawasan+jenis match) SAMA SEKALI skip hitung jarak vektor. Bentuk
+    // CTE ngitung buat SEMUA baris tanpa syarat duluan, baru difilter —
+    // kehilangan keuntungan short-circuit itu meski "cuma dihitung 1x".
+    // Makanya bentuk ini dipertahankan apa adanya, bukan "dioptimasi".
     return this.prisma.$queryRaw<ReportSimilarRow[]>`
       SELECT
         id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
@@ -316,7 +403,7 @@ export class ReportsService {
     return Prisma.sql`
       WITH mentah AS (
         SELECT
-          id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
+          id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
           estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh,
           (CASE tingkat_bahaya
             WHEN 'rendah' THEN 0.25
@@ -338,7 +425,7 @@ export class ReportsService {
         FROM mentah
       )
       SELECT
-        id, judul, deskripsi, kawasan, jenis_kerusakan, tingkat_bahaya,
+        id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
         estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh,
         ROUND((
           komponen_bahaya * ${Prisma.raw(String(BOBOT_BAHAYA))}
@@ -361,6 +448,8 @@ export class ReportsService {
       judul: row.judul,
       deskripsi: row.deskripsi,
       kawasan: row.kawasan,
+      lat: row.lat,
+      lng: row.lng,
       jenis_kerusakan: row.jenis_kerusakan,
       tingkat_bahaya: row.tingkat_bahaya,
       estimasi_terdampak: row.estimasi_terdampak,

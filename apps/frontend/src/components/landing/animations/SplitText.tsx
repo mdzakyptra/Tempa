@@ -85,15 +85,16 @@ export default function SplitText({
             {wi < words.length - 1 ? <span>&nbsp;</span> : null}
           </span>
         ) : (
-          <span
-            key={wi}
-            className="inline-block overflow-hidden align-bottom"
-            style={{ paddingBottom: "0.08em" }}
-          >
-            <motion.span variants={word} className="inline-block">
-              {w}
-              {wi < words.length - 1 ? " " : ""}
-            </motion.span>
+          <span key={wi}>
+            <span
+              className="inline-block overflow-hidden align-bottom"
+              style={{ paddingBottom: "0.08em" }}
+            >
+              <motion.span variants={word} className="inline-block">
+                {w}
+              </motion.span>
+            </span>
+            {wi < words.length - 1 ? " " : ""}
           </span>
         )
       )}

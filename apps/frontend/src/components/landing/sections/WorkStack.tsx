@@ -5,31 +5,27 @@ import ScrollReveal from "../animations/ScrollReveal";
 const projects = [
   {
     n: "01",
-    title: "Aether OS",
-    tag: "Product · Interface",
-    desc: "A monochrome operating shell with buttery 120fps transitions and a physics-driven dock.",
-    img: "https://picsum.photos/seed/aether9/900/600?grayscale",
+    title: "Beranda / Antrean",
+    tag: "Halaman · Antrean",
+    desc: "Daftar laporan terurut skor, filter kawasan dan jenis kerusakan, data langsung dari basis data.",
   },
   {
     n: "02",
-    title: "Noir Editorial",
-    tag: "Web · Motion",
-    desc: "An award-winning editorial platform where typography breathes and scroll tells the story.",
-    img: "https://picsum.photos/seed/noir42/900/600?grayscale",
+    title: "Detail Laporan",
+    tag: "Halaman · Transparansi",
+    desc: "Rincian skor terbuka, tombol dukung, riwayat status, dan foto laporan.",
   },
   {
     n: "03",
-    title: "Vanta Commerce",
-    tag: "E-commerce · 3D",
-    desc: "Products float in a WebGL void. Every hover ripples, every add-to-cart feels physical.",
-    img: "https://picsum.photos/seed/vanta17/900/600?grayscale",
+    title: "Lapor Baru",
+    tag: "Halaman · Pelaporan",
+    desc: "Formulir laporan, unggah foto, deteksi laporan serupa berbasis AI, posisi antrean setelah tersimpan.",
   },
   {
     n: "04",
-    title: "Obsidian Labs",
-    tag: "Brand · Identity",
-    desc: "A living identity system rendered entirely in grayscale, animated end to end.",
-    img: "https://picsum.photos/seed/obsidian5/900/600?grayscale",
+    title: "Metodologi",
+    tag: "Halaman · Metodologi",
+    desc: "Rumus skor, bobot tiap komponen, dan batasan sistem dijelaskan terbuka.",
   },
 ];
 
@@ -40,11 +36,11 @@ export default function WorkStack() {
       <div className="mx-auto mb-16 max-w-4xl text-center">
         <ScrollReveal>
           <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            Selected work
+            Yang bisa kamu lakukan
           </span>
         </ScrollReveal>
         <h2 className="mt-4 text-4xl font-black tracking-tighter sm:text-6xl">
-          <SplitText text="Projects that move" />
+          <SplitText text="Empat halaman inti" />
         </h2>
       </div>
 
@@ -74,7 +70,7 @@ export default function WorkStack() {
                   <p className="mt-4 text-neutral-600">{p.desc}</p>
                   <div className="group mt-6 inline-flex items-center gap-2 text-sm font-semibold text-black">
                     <span className="relative">
-                      View case study
+                      Lihat halaman
                       <span className="absolute -bottom-1 left-0 h-px w-0 bg-black transition-all duration-300 group-hover:w-full" />
                     </span>
                     <span
@@ -86,18 +82,13 @@ export default function WorkStack() {
                   </div>
                 </div>
                 <div
-                  data-cursor-label="View"
-                  className={`group/img relative aspect-[4/3] overflow-hidden rounded-2xl border border-black/10 ${
+                  className={`group/img relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-black/10 bg-neutral-50 ${
                     flipped ? "md:order-1" : ""
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.img}
-                    alt={p.title}
-                    className="h-full w-full object-cover grayscale transition-transform duration-700 group-hover/img:scale-105"
-                    loading="lazy"
-                  />
+                  <span className="text-stroke text-6xl font-black tracking-tighter opacity-40 transition-transform duration-700 group-hover/img:scale-105 md:text-7xl">
+                    {p.n}
+                  </span>
                 </div>
               </div>
             </ScrollStackItem>
