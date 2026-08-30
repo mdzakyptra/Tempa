@@ -118,7 +118,7 @@ function HorizontalScroller({ children, speed, direction }: HorizontalScrollerPr
 //<---------- HabitFaqScroller ------------>
 export default function HabitFaqScroller() {
   return (
-    <section className="overflow-hidden bg-neutral-50 py-16 sm:py-20" aria-labelledby="landing-faq-title">
+    <section id="faq" className="overflow-hidden bg-neutral-50 py-16 sm:py-20" aria-labelledby="landing-faq-title">
       <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
         <div className="max-w-2xl text-center">
           <h2 id="landing-faq-title" className="animate-fade-in-up text-3xl font-bold tracking-tight text-neutral-900 sm:text-5xl">

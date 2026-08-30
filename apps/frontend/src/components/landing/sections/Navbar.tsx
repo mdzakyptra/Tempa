@@ -4,10 +4,9 @@ import MagneticButton from "../animations/MagneticButton";
 import RollingText from "../animations/RollingText";
 
 const links = [
-  { label: "Fitur", href: "#fitur" },
-  { label: "Skor", href: "#skor" },
-  { label: "Lapor", href: "#lapor" },
-  { label: "Kontak", href: "#kontak" },
+  { label: "Fitur", href: "#work" },
+  { label: "FAQ", href: "#faq" },
+  { label: "Lapor", href: "/lapor-baru" },
 ];
 
 //<---------- Navbar -------------->

@@ -159,17 +159,17 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
   }
 
   return (
-    <section aria-labelledby="location-heading" className="rounded-lg border border-gray-200 p-4">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <section aria-labelledby="location-heading" className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 sm:p-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 id="location-heading" className="text-sm font-medium text-gray-800">Titik lokasi kerusakan</h2>
-          <p className="text-xs text-gray-500">Gunakan GPS atau klik titik di peta 3D.</p>
+          <h2 id="location-heading" className="text-sm font-semibold text-neutral-900">Tentukan titik di peta</h2>
+          <p className="text-xs text-neutral-500">Gunakan GPS, cari lokasi, atau klik titik di peta 3D.</p>
         </div>
         <button
           type="button"
           onClick={handleUseCurrentLocation}
           disabled={isLocating}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60"
+          className="rounded-xl border border-neutral-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-neutral-900 transition hover:border-neutral-950 disabled:cursor-wait disabled:opacity-60"
         >
           {isLocating ? 'Mencari lokasi…' : 'Gunakan lokasi saya'}
         </button>
@@ -183,7 +183,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Cari jalan, kelurahan, atau tempat…"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:outline-none"
+          className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:ring-4 focus:ring-neutral-950/5"
           autoComplete="off"
         />
         {isSearching && <p className="mt-1 text-xs text-gray-500">Mencari lokasi…</p>}
@@ -205,7 +205,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
       </div>
 
       {MAPBOX_TOKEN ? (
-        <div ref={containerRef} className="h-72 overflow-hidden rounded-md border border-gray-200 sm:h-96" />
+        <div ref={containerRef} className="h-72 overflow-hidden rounded-xl border border-neutral-200 sm:h-96" />
       ) : (
         <p className="rounded-md bg-amber-50 p-3 text-xs text-amber-800">
           Peta belum aktif. Tetap bisa memakai lokasi perangkat; setel VITE_MAPBOX_TOKEN untuk memilih titik manual.

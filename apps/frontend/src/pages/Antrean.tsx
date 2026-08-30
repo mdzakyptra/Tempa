@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { ALL_REPORTS_PATH, apiFetchPaginated } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
 import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
@@ -34,7 +34,7 @@ export default function Antrean() {
     jenis_kerusakan: '',
   })
   const [page, setPage] = useState(1)
-  const [isPanelOpen, setIsPanelOpen] = useState(true)
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [isHeatmap, setIsHeatmap] = useState(false)
 
   //<---------- handleFilterChange -------------->
@@ -83,13 +83,13 @@ export default function Antrean() {
     .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul, weight: r.skor }))
 
   return (
-    <div className="bg-neutral-100 p-3 text-black sm:p-6">
-      <div className="mx-auto mb-5 max-w-[1600px] px-1 sm:px-0">
+    <div className="h-full overflow-hidden bg-neutral-100 p-3 text-black sm:p-5">
+      <div className="mx-auto mb-3 max-w-[1600px] px-1 sm:px-0">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">Aspiraku</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Peta prioritas laporan</h1>
       </div>
 
-      <main className="relative mx-auto h-[calc(100svh-9.5rem)] min-h-[600px] max-w-[1600px] overflow-hidden rounded-3xl border border-black/10 bg-neutral-200 shadow-sm sm:h-[calc(100svh-10.5rem)]">
+      <main className="relative mx-auto h-[calc(100%-4.25rem)] max-w-[1600px] overflow-hidden rounded-3xl border border-black/10 bg-neutral-200 shadow-sm">
         {markers.length > 0 ? (
           <div className="absolute inset-0">
             <CityMap
@@ -107,7 +107,7 @@ export default function Antrean() {
           </div>
         )}
 
-        <div className="absolute top-4 right-4 z-[500] flex items-center gap-2">
+        <div className="absolute top-4 left-4 z-[500] flex items-center gap-2">
           <div className="pointer-events-none rounded-full border border-black/10 bg-white/90 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-600 shadow-sm backdrop-blur-sm">
             {isHeatmap ? 'Peta kepadatan' : `${markers.length} titik di peta`}
           </div>
@@ -136,19 +136,19 @@ export default function Antrean() {
           <button
             type="button"
             onClick={() => setIsPanelOpen(true)}
-            className="absolute top-4 left-4 z-[500] flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+            className="absolute right-4 bottom-4 z-[500] flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 sm:top-4 sm:right-4 sm:bottom-auto"
             aria-controls="queue-panel"
             aria-expanded="false"
           >
-            <PanelLeftOpen className="size-4" aria-hidden />
-            Buka antrean
+            <PanelRightOpen className="size-4" aria-hidden />
+            {meta ? `Daftar laporan · ${meta.total}` : 'Daftar laporan'}
           </button>
         )}
 
         <aside
           id="queue-panel"
-          className={`absolute inset-x-3 top-16 bottom-3 z-[500] flex flex-col overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-transform duration-300 sm:inset-x-auto sm:top-4 sm:bottom-4 sm:left-4 sm:w-[min(26rem,calc(100%-2rem))] ${
-            isPanelOpen ? 'translate-x-0 translate-y-0' : 'pointer-events-none -translate-x-[calc(100%+2rem)] sm:-translate-x-[calc(100%+2rem)]'
+          className={`absolute inset-x-0 bottom-0 z-[500] flex h-[min(72svh,42rem)] flex-col overflow-hidden rounded-t-3xl border border-black/10 bg-white shadow-2xl transition-transform duration-300 sm:inset-x-auto sm:top-4 sm:right-4 sm:bottom-4 sm:h-auto sm:w-[min(24rem,calc(100%-2rem))] sm:rounded-2xl ${
+            isPanelOpen ? 'translate-x-0 translate-y-0' : 'pointer-events-none translate-y-[calc(100%+1rem)] sm:translate-x-[calc(100%+2rem)] sm:translate-y-0'
           }`}
           aria-hidden={!isPanelOpen}
         >
@@ -165,7 +165,7 @@ export default function Antrean() {
               className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300"
               aria-label="Tutup panel antrean"
             >
-              <PanelLeftClose className="size-5" aria-hidden />
+              <PanelRightClose className="size-5" aria-hidden />
             </button>
           </div>
 
