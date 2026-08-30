@@ -4,8 +4,10 @@ import { apiFetch, ApiError } from '../lib/api'
 import { StatusTimeline } from '../components/status-timeline'
 import { ScoreBreakdown } from '../components/score-breakdown'
 import { CityMap } from '../components/city-map'
+import { QueueAssistant } from '../components/queue-assistant'
 import type { ReportListItem } from '../components/report-card'
 import NotFound from './NotFound'
+
 
 // Mirror apps/backend/src/photos/dto/report-photo-response.dto.ts
 interface ReportPhoto {
@@ -160,6 +162,7 @@ export default function DetailLaporan() {
       <div className="mt-4">
         <StatusTimeline reportId={id} />
       </div>
+      <QueueAssistant reportId={id} />
     </div>
   )
 }
