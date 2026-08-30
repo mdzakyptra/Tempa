@@ -10,6 +10,7 @@ import Process from '../components/landing/sections/Process'
 import Stats from '../components/landing/sections/Stats'
 import CTA from '../components/landing/sections/CTA'
 import Footer from '../components/landing/sections/Footer'
+import { QueueAssistant } from '../components/queue-assistant'
 
 
 //<---------- Beranda -------------->
@@ -34,6 +35,7 @@ export default function Beranda() {
       </main>
 
       <Footer />
+      <QueueAssistant />
     </div>
   )
 }
