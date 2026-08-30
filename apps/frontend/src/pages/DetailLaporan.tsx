@@ -1,10 +1,11 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { apiFetch } from '../lib/api'
+import { apiFetch, ApiError } from '../lib/api'
 import { StatusTimeline } from '../components/status-timeline'
 import { ScoreBreakdown } from '../components/score-breakdown'
 import { CityMap } from '../components/city-map'
 import type { ReportListItem } from '../components/report-card'
+import NotFound from './NotFound'
 
 // Mirror apps/backend/src/photos/dto/report-photo-response.dto.ts
 interface ReportPhoto {
@@ -50,11 +51,15 @@ export default function DetailLaporan() {
     data: report,
     isLoading,
     isError,
+    error: reportError,
   } = useQuery({
     queryKey: ['report', id],
     queryFn: () => apiFetch<ReportListItem>(`/reports/${id}`),
     enabled: !!id,
+    retry: (failureCount, err) => !(err instanceof ApiError && err.statusCode === 404) && failureCount < 3,
   })
+
+  const isNotFound = reportError instanceof ApiError && reportError.statusCode === 404
 
   // retry:false — laporan yang belum punya foto itu keadaan normal (bukan
   // error transient), nggak perlu diulang-ulang kayak default TanStack Query.
@@ -70,6 +75,15 @@ export default function DetailLaporan() {
   })
 
   if (!id) return null
+
+  if (isNotFound) {
+    return (
+      <NotFound
+        title="Laporan tidak ditemukan"
+        description="Laporan dengan ID ini tidak ada, atau sudah dihapus."
+      />
+    )
+  }
 
   return (
     <div className="mx-auto  p-6">

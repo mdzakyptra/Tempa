@@ -42,3 +42,25 @@ export async function loadLandData(): Promise<LandData> {
   }
   return cachedLandData
 }
+
+let cachedWorldLandData: LandData | null = null
+
+//<---------- getCachedWorldLandData -------------->
+export function getCachedWorldLandData(): LandData | null {
+  return cachedWorldLandData
+}
+
+//<---------- loadWorldLandData -------------->
+export async function loadWorldLandData(): Promise<LandData> {
+  if (cachedWorldLandData) return cachedWorldLandData
+
+  const response = await fetch(LAND_DATA_URL)
+  if (!response.ok) throw new Error('Failed to load land data')
+
+  const collection = (await response.json()) as d3.ExtendedFeatureCollection
+  cachedWorldLandData = {
+    features: collection.features,
+    dots: collection.features.flatMap((feature) => generateDotsInFeature(feature, 24)),
+  }
+  return cachedWorldLandData
+}
