@@ -7,6 +7,7 @@ import DetailLaporan from './pages/DetailLaporan'
 import HasilLapor from './pages/HasilLapor'
 import LaporBaru from './pages/LaporBaru'
 import Metodologi from './pages/Metodologi'
+import NotFound from './pages/NotFound'
 import PanelPetugas from './pages/PanelPetugas'
 
 
@@ -23,6 +24,7 @@ function App() {
         <Route path="/metodologi" element={<Metodologi />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/panel-petugas" element={<PanelPetugas />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
