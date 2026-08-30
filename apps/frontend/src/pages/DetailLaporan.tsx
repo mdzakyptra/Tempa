@@ -5,6 +5,7 @@ import { StatusTimeline } from '../components/status-timeline'
 import { ScoreBreakdown } from '../components/score-breakdown'
 import { CityMap } from '../components/city-map'
 import { QueueAssistant } from '../components/queue-assistant'
+import { VoteButton } from '../components/vote-button'
 import type { ReportListItem } from '../components/report-card'
 import NotFound from './NotFound'
 
@@ -89,7 +90,10 @@ export default function DetailLaporan() {
 
   return (
     <div className="mx-auto  p-6">
-      <h1 className="text-2xl font-bold text-neutral-900">{report ? report.judul : 'Detail Laporan'}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-neutral-900">{report ? report.judul : 'Detail Laporan'}</h1>
+        {report && <VoteButton reportId={report.id} votesCount={report.votes_count} />}
+      </div>
 
       <div className="mt-8 grid gap-8 md:grid-cols-2">
         <div>
