@@ -19,6 +19,8 @@ export interface CreateReportPayload {
   judul: string
   deskripsi: string
   kawasan: string
+  lat: number
+  lng: number
   jenis_kerusakan: JenisKerusakan
   tingkat_bahaya: TingkatBahaya
   estimasi_terdampak: number
