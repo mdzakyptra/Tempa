@@ -145,7 +145,7 @@ export default function QueueAssistant({ reportId }: QueueAssistantProps) {
             />
             <button
               type="submit"
-              disabled={!question.trim() || isLoading}
+              disabled={isLoading}
               className="rounded-xl bg-neutral-900 p-2 text-white hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:cursor-not-allowed disabled:bg-neutral-300"
               aria-label="Kirim pertanyaan"
             >
