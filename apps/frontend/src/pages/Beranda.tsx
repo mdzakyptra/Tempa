@@ -16,7 +16,7 @@ import { QueueAssistant } from '../components/queue-assistant'
 //<---------- Beranda -------------->
 export default function Beranda() {
   return (
-    <div className="bg-white text-black antialiased">
+    <div className="font-display bg-white text-black antialiased">
       <ScrollProgress />
       <CustomCursor />
       <div className="grain-overlay" aria-hidden />
