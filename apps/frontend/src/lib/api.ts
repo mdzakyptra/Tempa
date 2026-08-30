@@ -4,10 +4,10 @@ import { getAccessToken, getValidAccessToken, refreshAccessToken } from './auth'
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 // GET /reports paginate ke 10 item per halaman secara default (lihat
-// ListReportsQueryDto di BE, limit max 100). Beberapa tempat (globe, dropdown
+// ListReportsQueryDto di BE, limit max 500). Beberapa tempat (globe, dropdown
 // kawasan, hitung posisi antrean setelah lapor) butuh SEMUA laporan aktif,
 // bukan cuma satu halaman — pakai path ini, bukan '/reports' polos.
-export const ALL_REPORTS_PATH = '/reports?limit=100'
+export const ALL_REPORTS_PATH = '/reports?limit=500'
 
 // Envelope sukses/gagal dari backend NestJS — lihat ApiResponseDto &
 // ApiErrorResponseDto di apps/backend/src/common/dto/.

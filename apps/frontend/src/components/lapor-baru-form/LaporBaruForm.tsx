@@ -3,6 +3,8 @@ import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { apiFetch } from '../../lib/api'
 import { SimilarReportsSuggestion } from '../similar-reports'
+import { LocationPicker } from '../location-picker'
+import type { LocationValue } from '../location-picker'
 import {
   JENIS_KERUSAKAN_LABEL,
   JENIS_KERUSAKAN_OPTIONS,
@@ -11,6 +13,7 @@ import {
 } from '../../lib/report-enums'
 import { validateLaporBaruForm } from './validate'
 import type { CreateReportPayload, LaporBaruFormProps, LaporBaruFormState } from './types'
+
 
 const INITIAL_FORM: LaporBaruFormState = {
   judul: '',
@@ -38,6 +41,7 @@ export default function LaporBaruForm({ onCreated }: LaporBaruFormProps) {
   const [form, setForm] = useState<LaporBaruFormState>(INITIAL_FORM)
   const [touched, setTouched] = useState<Partial<Record<keyof LaporBaruFormState, boolean>>>({})
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+  const [location, setLocation] = useState<LocationValue | null>(null)
 
   const errors = useMemo(() => validateLaporBaruForm(form), [form])
 
@@ -61,12 +65,14 @@ export default function LaporBaruForm({ onCreated }: LaporBaruFormProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     setAttemptedSubmit(true)
-    if (Object.keys(errors).length > 0) return
+    if (Object.keys(errors).length > 0 || !location) return
 
     createMutation.mutate({
       judul: form.judul.trim(),
       deskripsi: form.deskripsi.trim(),
       kawasan: form.kawasan.trim(),
+      lat: location.lat,
+      lng: location.lng,
       jenis_kerusakan: form.jenis_kerusakan as CreateReportPayload['jenis_kerusakan'],
       tingkat_bahaya: form.tingkat_bahaya as CreateReportPayload['tingkat_bahaya'],
       estimasi_terdampak: Number(form.estimasi_terdampak),
@@ -82,6 +88,9 @@ export default function LaporBaruForm({ onCreated }: LaporBaruFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <LocationPicker value={location} onChange={setLocation} />
+      {attemptedSubmit && !location && <FieldError message="Pilih titik lokasi kerusakan terlebih dahulu" />}
+
       <div>
         <label htmlFor="kawasan" className="mb-1 block text-sm font-medium text-gray-700">
           Kawasan

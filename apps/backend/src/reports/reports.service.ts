@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -150,19 +151,21 @@ export class ReportsService {
       ? Prisma.sql`LIMIT ${limit} OFFSET ${offset}`
       : Prisma.empty;
 
-    const [rows, [{ total }]] = await Promise.all([
-      this.prisma.$queryRaw<ReportScoredRow[]>`
-        ${this.scoredReportsCte()}
-        ${where}
-        ORDER BY skor DESC, dibuat_pada ASC
-        ${limitOffset}
-      `,
-      this.prisma.$queryRaw<{ total: number }[]>`
-        SELECT COUNT(*)::int AS total FROM reports
-        WHERE digabung_ke_id IS NULL
-        ${conditions.length > 0 ? Prisma.sql`AND ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
-      `,
-    ]);
+    const [rows, [{ total }]] = await this.withDatabaseRetry(() =>
+      Promise.all([
+        this.prisma.$queryRaw<ReportScoredRow[]>`
+          ${this.scoredReportsCte()}
+          ${where}
+          ORDER BY skor DESC, dibuat_pada ASC
+          ${limitOffset}
+        `,
+        this.prisma.$queryRaw<{ total: number }[]>`
+          SELECT COUNT(*)::int AS total FROM reports
+          WHERE digabung_ke_id IS NULL
+          ${conditions.length > 0 ? Prisma.sql`AND ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+        `,
+      ]),
+    );
 
     return {
       items: rows.map((row) => this.toListItem(row)),
@@ -170,6 +173,45 @@ export class ReportsService {
         ? { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) }
         : { page: 1, limit: total, total, totalPages: 1 },
     };
+  }
+
+  //<---------- withDatabaseRetry ------------>
+  private async withDatabaseRetry<T>(operation: () => Promise<T>): Promise<T> {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        return await operation();
+      } catch (error) {
+        const isTransient = this.isTransientDatabaseError(error);
+        if (!isTransient || attempt === maxAttempts) {
+          if (isTransient) {
+            throw new ServiceUnavailableException(
+              'Database sedang tidak dapat dihubungi. Silakan coba lagi.',
+            );
+          }
+          throw error;
+        }
+
+        await new Promise<void>((resolve) => setTimeout(resolve, attempt * 250));
+      }
+    }
+
+    throw new ServiceUnavailableException(
+      'Database sedang tidak dapat dihubungi. Silakan coba lagi.',
+    );
+  }
+
+  //<---------- isTransientDatabaseError ------------>
+  private isTransientDatabaseError(error: unknown): boolean {
+    let current: unknown = error;
+
+    for (let depth = 0; depth < 3 && current instanceof Error; depth += 1) {
+      if (current.message.includes('EAI_AGAIN')) return true;
+      current = current.cause;
+    }
+
+    return false;
   }
 
   //<---------- findOne -------------->

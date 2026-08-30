@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowRight, LockKeyhole, UserRound } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { ArrowRight, ChevronLeft, LockKeyhole, UserRound } from 'lucide-react'
 import { ApiError, apiFetch } from '../lib/api'
 import { storeTokens, type TokenPair } from '../lib/auth'
+
+
+const Dither = lazy(() => import('../components/Dither'))
 
 
 type AuthMode = 'login' | 'register'
@@ -28,6 +32,8 @@ interface AuthFormValues {
 }
 
 const INITIAL_FORM: AuthFormValues = { nama: '', email: '', password: '' }
+type CurtainPhase = 'idle' | 'closing' | 'opening'
+type CurtainDirection = 'rtl' | 'ltr'
 
 //<---------- getRedirectPath ------------>
 function getRedirectPath(value: string | null) {
@@ -52,6 +58,9 @@ export default function Auth() {
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<AuthMode>('login')
   const [form, setForm] = useState<AuthFormValues>(INITIAL_FORM)
+  const [curtain, setCurtain] = useState<CurtainPhase>('idle')
+  const [curtainDirection, setCurtainDirection] = useState<CurtainDirection>('rtl')
+  const [pendingMode, setPendingMode] = useState<AuthMode | null>(null)
 
   const authMutation = useMutation({
     mutationFn: (values: AuthFormValues) => {
@@ -70,9 +79,23 @@ export default function Auth() {
 
   //<---------- handleModeChange ------------>
   function handleModeChange(nextMode: AuthMode) {
-    setMode(nextMode)
-    setForm(INITIAL_FORM)
-    authMutation.reset()
+    if (nextMode === mode || curtain !== 'idle') return
+    setCurtainDirection(nextMode === 'register' ? 'rtl' : 'ltr')
+    setPendingMode(nextMode)
+    setCurtain('closing')
+  }
+
+  //<---------- handleCurtainAnimationComplete ------------>
+  function handleCurtainAnimationComplete() {
+    if (curtain === 'closing' && pendingMode) {
+      setMode(pendingMode)
+      setForm(INITIAL_FORM)
+      authMutation.reset()
+      setPendingMode(null)
+      setCurtain('opening')
+    } else if (curtain === 'opening') {
+      setCurtain('idle')
+    }
   }
 
   //<---------- handleSubmit ------------>
@@ -86,42 +109,50 @@ export default function Auth() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-65px)] items-center justify-center bg-neutral-50 px-4 py-10 sm:px-6">
-      <section className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex size-11 items-center justify-center rounded-xl bg-neutral-900 text-white">
+    <div className="min-h-screen bg-neutral-50">
+      {curtain !== 'idle' && (
+        <motion.div
+          initial={{ x: curtain === 'closing' ? (curtainDirection === 'rtl' ? '100%' : '-100%') : '0%' }}
+          animate={{ x: curtain === 'closing' ? '0%' : curtainDirection === 'rtl' ? '-100%' : '100%' }}
+          transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
+          onAnimationComplete={handleCurtainAnimationComplete}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950"
+        >
+          <motion.p
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: curtain === 'closing' ? 1 : 0, scale: curtain === 'closing' ? 1 : 0.94 }}
+            transition={{ duration: 0.3, delay: curtain === 'closing' ? 0.15 : 0 }}
+            className="text-lg font-black tracking-tighter text-white"
+          >
+            Aspiraku
+          </motion.p>
+        </motion.div>
+      )}
+
+      <section className="grid min-h-screen w-full bg-white md:grid-cols-2">
+        <div className={`relative flex flex-col justify-center p-6 sm:p-10 lg:p-16 ${mode === 'login' ? 'md:order-1' : 'md:order-2'}`}>
+        <Link
+          to="/antrean"
+          aria-label="Kembali ke antrean"
+          className="absolute top-6 left-6 flex items-center gap-1 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 sm:top-8 sm:left-8"
+        >
+          <ChevronLeft className="size-5" aria-hidden />
+          Kembali
+        </Link>
+        <div className="mx-auto w-full max-w-sm">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-neutral-900 text-white">
           {mode === 'login' ? <LockKeyhole className="size-5" aria-hidden /> : <UserRound className="size-5" aria-hidden />}
-        </div>
-        <h1 className="mt-5 text-2xl font-bold text-neutral-900">
-          {mode === 'login' ? 'Masuk ke Antrean Kota' : 'Buat akun warga'}
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-          {mode === 'login'
-            ? 'Masuk untuk mendukung laporan dan melacak aktivitas Anda.'
-            : 'Daftar untuk mendukung laporan serta mengikuti pembaruan antrean.'}
-        </p>
+          </div>
+          <h1 className="mt-5 text-2xl font-bold text-neutral-900">
+            {mode === 'login' ? 'Masuk ke Aspiraku' : 'Buat akun warga'}
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+            {mode === 'login'
+              ? 'Masuk untuk mendukung laporan dan melacak aktivitas Anda.'
+              : 'Daftar untuk mendukung laporan serta mengikuti pembaruan antrean.'}
+          </p>
 
-        <div className="mt-6 grid grid-cols-2 rounded-xl bg-neutral-100 p-1">
-          <button
-            type="button"
-            onClick={() => handleModeChange('login')}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              mode === 'login' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
-            }`}
-          >
-            Masuk
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeChange('register')}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              mode === 'register' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
-            }`}
-          >
-            Daftar
-          </button>
-        </div>
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           {mode === 'register' && (
             <div>
               <label htmlFor="nama" className="text-sm font-medium text-neutral-800">
@@ -185,7 +216,59 @@ export default function Auth() {
             {authMutation.isPending ? 'Memproses…' : mode === 'login' ? 'Masuk' : 'Buat akun dan masuk'}
             {!authMutation.isPending && <ArrowRight className="size-4" aria-hidden />}
           </button>
-        </form>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-neutral-600 md:hidden">
+            {mode === 'login' ? 'Belum punya akun?' : 'Sudah punya akun?'}{' '}
+            <button
+              type="button"
+              disabled={curtain !== 'idle'}
+              onClick={() => handleModeChange(mode === 'login' ? 'register' : 'login')}
+              className="font-semibold text-neutral-900 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {mode === 'login' ? 'Daftar' : 'Masuk'}
+            </button>
+          </p>
+        </div>
+        </div>
+
+        <aside
+          className={`relative hidden overflow-hidden bg-neutral-950 md:block ${mode === 'login' ? 'md:order-2' : 'md:order-1'}`}
+          aria-label="Visualisasi dither Aspiraku"
+        >
+          <Suspense fallback={<div className="h-full w-full bg-neutral-950" />}>
+            <Dither
+              waveColor={[0.38, 0.55, 0.45]}
+              backgroundColor={[0.02, 0.03, 0.02]}
+              colorNum={4}
+              pixelSize={3}
+              waveAmplitude={0.3}
+              waveFrequency={3}
+              waveSpeed={0.05}
+              mouseRadius={0.3}
+            />
+          </Suspense>
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-center p-8 lg:p-10">
+            <p className="pointer-events-none text-xs font-semibold tracking-[0.2em] text-white/60 uppercase">Aspiraku</p>
+            <p className="pointer-events-none mt-3 max-w-sm text-2xl font-semibold tracking-tight text-white">Suara warga, gerak kota.</p>
+            <p className="pointer-events-none mt-2 max-w-sm text-sm leading-relaxed text-white/70">Pantau laporan lingkungan dan dukung perubahan yang terlihat.</p>
+
+            <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+              <p className="text-sm text-white/80">
+                {mode === 'login' ? 'Belum punya akun?' : 'Sudah punya akun?'}
+              </p>
+              <button
+                type="button"
+                disabled={curtain !== 'idle'}
+                onClick={() => handleModeChange(mode === 'login' ? 'register' : 'login')}
+                className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {mode === 'login' ? 'Daftar' : 'Masuk'}
+              </button>
+            </div>
+          </div>
+        </aside>
       </section>
     </div>
   )

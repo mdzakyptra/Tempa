@@ -81,7 +81,7 @@ export default function Hero() {
           transition={{ delay: 0.6, duration: 1.6 }}
           className="text-stroke whitespace-nowrap text-[24vw] font-black leading-none tracking-tighter opacity-[0.07]"
         >
-          ANTREAN
+          ASPIRAKU
         </motion.span>
       </motion.div>
 
@@ -105,7 +105,7 @@ export default function Hero() {
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/20 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-neutral-700"
         >
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
-          <TextScramble text="Transparansi antrean kota" />
+          <TextScramble text="Transparansi aspirasi kota" />
         </motion.span>
 
         <motion.h1
