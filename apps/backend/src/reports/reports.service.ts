@@ -118,7 +118,21 @@ export class ReportsService {
   }
 
   //<---------- findAll -------------->
+  // LIMIT/OFFSET, sama kayak WHERE (lihat catatan di scoredReportsCte),
+  // ditempel SETELAH CTE — normalisasi komponen skor tetap dihitung
+  // terhadap seluruh tabel, bukan cuma satu halaman.
+  //
+  // Paginasi cuma aktif kalau page/limit eksplisit ke-set. Lewat HTTP,
+  // ListReportsQueryDto SELALU punya nilai (default page=1/limit=10 dari
+  // ValidationPipe transform:true). Pemanggil internal (AiAssistantService,
+  // butuh SELURUH antrean buat hitung posisi_antrean yang benar) lewat
+  // objek literal `{}` — page/limit-nya tetap undefined, jadi diambil semua.
   async findAll(filter: ListReportsQueryDto) {
+    const isPaginated = filter.page !== undefined || filter.limit !== undefined;
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 10;
+    const offset = (page - 1) * limit;
+
     const conditions: Prisma.Sql[] = [];
     if (filter.kawasan) {
       conditions.push(Prisma.sql`kawasan = ${filter.kawasan}`);
@@ -132,14 +146,30 @@ export class ReportsService {
       conditions.length > 0
         ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
         : Prisma.empty;
+    const limitOffset = isPaginated
+      ? Prisma.sql`LIMIT ${limit} OFFSET ${offset}`
+      : Prisma.empty;
 
-    const rows = await this.prisma.$queryRaw<ReportScoredRow[]>`
-      ${this.scoredReportsCte()}
-      ${where}
-      ORDER BY skor DESC, dibuat_pada ASC
-    `;
+    const [rows, [{ total }]] = await Promise.all([
+      this.prisma.$queryRaw<ReportScoredRow[]>`
+        ${this.scoredReportsCte()}
+        ${where}
+        ORDER BY skor DESC, dibuat_pada ASC
+        ${limitOffset}
+      `,
+      this.prisma.$queryRaw<{ total: number }[]>`
+        SELECT COUNT(*)::int AS total FROM reports
+        WHERE digabung_ke_id IS NULL
+        ${conditions.length > 0 ? Prisma.sql`AND ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+      `,
+    ]);
 
-    return rows.map((row) => this.toListItem(row));
+    return {
+      items: rows.map((row) => this.toListItem(row)),
+      meta: isPaginated
+        ? { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) }
+        : { page: 1, limit: total, total, totalPages: 1 },
+    };
   }
 
   //<---------- findOne -------------->

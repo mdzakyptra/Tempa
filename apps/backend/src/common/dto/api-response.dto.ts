@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationMetaDto } from './pagination-meta.dto';
 
 
 export class ApiResponseDto<T = unknown> {
@@ -10,12 +11,20 @@ export class ApiResponseDto<T = unknown> {
 
   data?: T;
 
+  @ApiPropertyOptional({ type: PaginationMetaDto })
+  meta?: PaginationMetaDto;
+
   //<---------- success -------------->
-  static success<T>(data: T, message = 'Berhasil'): ApiResponseDto<T> {
+  static success<T>(
+    data: T,
+    message = 'Berhasil',
+    meta?: PaginationMetaDto,
+  ): ApiResponseDto<T> {
     const response = new ApiResponseDto<T>();
     response.success = true;
     response.message = message;
     response.data = data;
+    response.meta = meta;
     return response;
   }
 }

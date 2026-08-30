@@ -65,6 +65,9 @@ function FlyTo({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null
 }
 
+// Stable reference for the "no zones" default — a literal `[]` default
+// parameter would create a new array every render and defeat the
+// `zones !== prevZones` check below, causing an infinite render loop.
 const NO_ZONES: CityMapZone[] = []
 
 //<---------- CityMap -------------->

@@ -8,7 +8,7 @@ import WireframeDottedGlobe, {
 } from '@/components/ui/wireframe-dotted-globe'
 import { CityMap, type CityMapMarker, type CityMapZone } from '@/components/city-map'
 import { searchLocationID, type GeocodeResult } from '@/lib/geocode'
-import { apiFetch } from '@/lib/api'
+import { ALL_REPORTS_PATH, apiFetch } from '@/lib/api'
 import type { ReportListItem } from '@/components/report-card'
 
 type Phase = 'globe' | 'diving' | 'map'
@@ -40,7 +40,7 @@ export default function GlobeMapTransition() {
 
   const { data: reports } = useQuery({
     queryKey: ['reports'],
-    queryFn: () => apiFetch<ReportListItem[]>('/reports'),
+    queryFn: () => apiFetch<ReportListItem[]>(ALL_REPORTS_PATH),
     staleTime: Infinity,
   })
 

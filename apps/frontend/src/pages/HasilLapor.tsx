@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { apiFetch } from '../lib/api'
+import { ALL_REPORTS_PATH, apiFetch } from '../lib/api'
 import { JENIS_KERUSAKAN_LABEL } from '../lib/report-enums'
 import type { JenisKerusakan, TingkatBahaya } from '../lib/report-enums'
 
@@ -77,7 +77,7 @@ export default function HasilLapor() {
 
   const listQuery = useQuery({
     queryKey: ['reports'],
-    queryFn: () => apiFetch<ReportListItem[]>('/reports'),
+    queryFn: () => apiFetch<ReportListItem[]>(ALL_REPORTS_PATH),
     retry: false,
   })
 
