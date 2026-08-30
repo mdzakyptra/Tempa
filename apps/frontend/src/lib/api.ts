@@ -1,5 +1,11 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
+// GET /reports paginate ke 10 item per halaman secara default (lihat
+// ListReportsQueryDto di BE, limit max 100). Beberapa tempat (globe, dropdown
+// kawasan, hitung posisi antrean setelah lapor) butuh SEMUA laporan aktif,
+// bukan cuma satu halaman — pakai path ini, bukan '/reports' polos.
+export const ALL_REPORTS_PATH = '/reports?limit=100'
+
 // Envelope sukses/gagal dari backend NestJS — lihat ApiResponseDto &
 // ApiErrorResponseDto di apps/backend/src/common/dto/.
 interface ApiSuccessEnvelope<T> {
@@ -14,6 +20,17 @@ interface ApiErrorEnvelope {
   statusCode: number
   path: string
   timestamp: string
+}
+
+export interface PaginationMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+interface ApiPaginatedEnvelope<T> extends ApiSuccessEnvelope<T> {
+  meta: PaginationMeta
 }
 
 //<---------- ApiError -------------->
@@ -57,6 +74,41 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   }
 
   return (body as ApiSuccessEnvelope<T>).data as T
+}
+
+//<---------- apiFetchPaginated -------------->
+// Sama kayak apiFetch, tapi juga ngambil `meta` dari envelope — dipakai
+// endpoint yang di-paginate backend-nya (lihat PaginationMetaDto di BE).
+export async function apiFetchPaginated<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ data: T; meta: PaginationMeta }> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init?.headers,
+      },
+    })
+  } catch {
+    throw new ApiError('Tidak bisa terhubung ke server', 0)
+  }
+
+  let body: ApiPaginatedEnvelope<T> | ApiErrorEnvelope
+  try {
+    body = await response.json()
+  } catch {
+    throw new ApiError('Respons server tidak valid', response.status)
+  }
+
+  if (!response.ok || !body.success) {
+    const errorBody = body as ApiErrorEnvelope
+    throw new ApiError(errorBody.message, errorBody.statusCode ?? response.status, errorBody.path)
+  }
+
+  return { data: body.data as T, meta: body.meta }
 }
 
 //<---------- uploadFileToPresignedUrl -------------->

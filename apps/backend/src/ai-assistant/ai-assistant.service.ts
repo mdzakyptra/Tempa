@@ -31,7 +31,7 @@ export class AiAssistantService {
   // GET /reports (JEK-14) & GET /reports/:id (JEK-15), supaya jawaban model
   // gak bisa beda dari angka yang tampil di layar warga.
   private async buildContext(reportId?: string) {
-    const antrean = await this.reportsService.findAll({});
+    const { items: antrean } = await this.reportsService.findAll({});
 
     if (!reportId) {
       return {
@@ -54,7 +54,7 @@ export class AiAssistantService {
 
   //<---------- toContextItem -------------->
   private toContextItem(
-    report: Awaited<ReturnType<ReportsService['findAll']>>[number],
+    report: Awaited<ReturnType<ReportsService['findAll']>>['items'][number],
     index: number,
     total: number,
   ) {
