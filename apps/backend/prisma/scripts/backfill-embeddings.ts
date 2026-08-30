@@ -10,17 +10,16 @@
 // deteksi laporan serupa berbasis makna (JEK-19/48) beneran bisa ketes/kepakai
 // buat data seed demo yang ada.
 //
+// Aman dijalankan ke DB manapun (lokal atau Supabase) — operasinya cuma
+// isi kolom embedding yang masih NULL pakai embedding ASLI, nggak pernah
+// menghapus/menimpa data lain. Beda dari load-test-seed.ts yang sengaja
+// dibatasi ke lokal (itu pakai data acak, bukan buat data beneran).
+//
 // Jalanin: cd apps/backend && npx tsx prisma/scripts/backfill-embeddings.ts
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client';
 import { GeminiEmbeddingService } from '../../src/reports/gemini-embedding.service';
-
-if (!process.env.DATABASE_URL?.includes('localhost')) {
-  throw new Error(
-    'backfill-embeddings cuma boleh jalan ke DB lokal (DATABASE_URL harus mengandung "localhost").',
-  );
-}
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
