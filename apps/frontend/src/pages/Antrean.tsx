@@ -35,6 +35,7 @@ export default function Antrean() {
   })
   const [page, setPage] = useState(1)
   const [isPanelOpen, setIsPanelOpen] = useState(true)
+  const [isHeatmap, setIsHeatmap] = useState(false)
 
   //<---------- handleFilterChange -------------->
   // Ganti filter selalu balik ke halaman 1 — halaman lama bisa nggak ada
@@ -51,7 +52,7 @@ export default function Antrean() {
   }
 
   // Satu request memuat daftar prioritas sekaligus titik peta. Dengan data
-  // saat ini (di bawah limit API 100), filter dan pagination dilakukan lokal
+  // saat ini (di bawah limit API 500), filter dan pagination dilakukan lokal
   // supaya masuk ke Antrean tidak menjalankan query skor yang sama dua kali.
   const { data: semuaLaporanResponse, isLoading, isError } = useQuery({
     queryKey: ['reports', 'antrean'],
@@ -79,7 +80,7 @@ export default function Antrean() {
     .filter((report) => !filter.kawasan || report.kawasan === filter.kawasan)
     .filter((report) => !filter.jenis_kerusakan || report.jenis_kerusakan === filter.jenis_kerusakan)
     .filter((r): r is ReportListItem & { lat: number; lng: number } => r.lat !== null && r.lng !== null)
-    .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul }))
+    .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul, weight: r.skor }))
 
   return (
     <div className="bg-neutral-100 p-3 text-black sm:p-6">
@@ -91,7 +92,13 @@ export default function Antrean() {
       <main className="relative mx-auto h-[calc(100svh-9.5rem)] min-h-[600px] max-w-[1600px] overflow-hidden rounded-3xl border border-black/10 bg-neutral-200 shadow-sm sm:h-[calc(100svh-10.5rem)]">
         {markers.length > 0 ? (
           <div className="absolute inset-0">
-            <CityMap markers={markers} zoom={12} onMarkerClick={(marker) => navigateToReport(marker.id)} />
+            <CityMap
+              key={isHeatmap ? 'heatmap' : 'markers'}
+              markers={markers}
+              zoom={isHeatmap ? 4 : 12}
+              heatmap={isHeatmap}
+              onMarkerClick={(marker) => navigateToReport(marker.id)}
+            />
           </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 bg-neutral-50 text-neutral-400">
@@ -100,9 +107,30 @@ export default function Antrean() {
           </div>
         )}
 
-        <div className="pointer-events-none absolute top-4 right-4 z-[500] rounded-full border border-black/10 bg-white/90 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-600 shadow-sm backdrop-blur-sm">
-          {markers.length} titik di peta
+        <div className="absolute top-4 right-4 z-[500] flex items-center gap-2">
+          <div className="pointer-events-none rounded-full border border-black/10 bg-white/90 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-600 shadow-sm backdrop-blur-sm">
+            {isHeatmap ? 'Peta kepadatan' : `${markers.length} titik di peta`}
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsHeatmap((current) => !current)}
+            aria-pressed={isHeatmap}
+            className="rounded-full border border-black/10 bg-white px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-700 shadow-sm transition-colors hover:bg-neutral-100"
+          >
+            {isHeatmap ? 'Lihat titik' : 'Lihat heatmap'}
+          </button>
         </div>
+
+        {isHeatmap && (
+          <div className="pointer-events-none absolute right-4 bottom-4 z-[500] rounded-xl border border-black/10 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
+            <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-500">Kepadatan & prioritas</p>
+            <div className="mt-1.5 h-2 w-32 rounded-full bg-linear-to-r from-yellow-200 via-orange-400 to-red-700" />
+            <div className="mt-1 flex justify-between font-mono text-[9px] text-neutral-500">
+              <span>Rendah</span>
+              <span>Tinggi</span>
+            </div>
+          </div>
+        )}
 
         {!isPanelOpen && (
           <button

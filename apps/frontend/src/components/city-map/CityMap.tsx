@@ -10,6 +10,7 @@ export interface CityMapMarker {
   lat: number
   lng: number
   label?: string
+  weight?: number
   /** Which kawasan this report belongs to — used to gate it behind a zone circle when `zones` is set. */
   kawasan?: string
 }
@@ -34,6 +35,7 @@ interface CityMapProps {
   onZoneClick?: (kawasan: string, expanded: boolean) => void
   /** Bump this to force-collapse all expanded zones without changing `zones` itself (e.g. a "back" button). */
   resetExpandTrigger?: number
+  heatmap?: boolean
   className?: string
 }
 
@@ -81,6 +83,7 @@ export default function CityMap({
   onMarkerClick,
   onZoneClick,
   resetExpandTrigger,
+  heatmap = false,
   className = 'h-full w-full',
 }: CityMapProps) {
   const resolvedCenter: [number, number] = center ?? (markers[0] ? [markers[0].lat, markers[0].lng] : [-2.5, 118])
@@ -163,6 +166,7 @@ export default function CityMap({
       )
 
       map.addSource('zones', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addSource('reports-heatmap', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({
         id: 'zones-fill',
         type: 'circle',
@@ -174,6 +178,33 @@ export default function CityMap({
           'circle-stroke-color': ['get', 'color'],
           'circle-stroke-opacity': 0.5,
           'circle-stroke-width': 1.5,
+        },
+      })
+      map.addLayer({
+        id: 'reports-heatmap-layer',
+        type: 'heatmap',
+        source: 'reports-heatmap',
+        layout: { visibility: heatmap ? 'visible' : 'none' },
+        paint: {
+          'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0.2, 100, 1],
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 4, 0.7, 10, 1.8],
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0,
+            'rgba(255, 255, 255, 0)',
+            0.2,
+            '#fef08a',
+            0.45,
+            '#fb923c',
+            0.7,
+            '#ef4444',
+            1,
+            '#7f1d1d',
+          ],
+          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 4, 18, 10, 44],
+          'heatmap-opacity': 0.82,
         },
       })
 
@@ -260,6 +291,29 @@ export default function CityMap({
     }
   }, [zones])
 
+  //<---------- updateHeatmap ------------>
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const update = () => {
+      const source = map.getSource('reports-heatmap') as mapboxgl.GeoJSONSource | undefined
+      if (!source) return
+      source.setData({
+        type: 'FeatureCollection',
+        features: markers.map((marker) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [marker.lng, marker.lat] },
+          properties: { weight: marker.weight ?? 1 },
+        })),
+      })
+      map.setLayoutProperty('reports-heatmap-layer', 'visibility', heatmap ? 'visible' : 'none')
+    }
+
+    if (map.loaded()) update()
+    else map.once('load', update)
+  }, [heatmap, markers])
+
   // Markers — plain DOM mapboxgl.Marker (no React reconciliation needed,
   // list is short and swaps wholesale on expand/collapse).
   useEffect(() => {
@@ -268,7 +322,7 @@ export default function CityMap({
 
     const attach = () => {
       markerObjectsRef.current.forEach((m) => m.remove())
-      markerObjectsRef.current = visibleMarkers.map((marker) => {
+      markerObjectsRef.current = (heatmap ? [] : visibleMarkers).map((marker) => {
         const mbMarker = new mapboxgl.Marker({ color: '#2563eb' }).setLngLat([marker.lng, marker.lat]).addTo(map)
         if (marker.label) mbMarker.setPopup(new mapboxgl.Popup({ offset: 24 }).setText(marker.label))
         mbMarker.getElement().addEventListener('click', () => onMarkerClickRef.current?.(marker))
@@ -279,7 +333,7 @@ export default function CityMap({
     if (map.loaded()) attach()
     else map.once('load', attach)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleMarkers])
+  }, [heatmap, visibleMarkers])
 
   if (!MAPBOX_TOKEN) {
     return (
