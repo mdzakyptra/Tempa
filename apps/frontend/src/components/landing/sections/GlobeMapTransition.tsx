@@ -149,6 +149,10 @@ export default function GlobeMapTransition() {
       .filter((r) => kawasanInCluster.has(r.kawasan))
       .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul, kawasan: r.kawasan }))
 
+    // Cluster 1 kawasan doang = gak ada yang perlu di-disambiguasi — skip
+    // lingkaran zone (yang nyembunyiin marker sampe di-klik), langsung
+    // tunjukin marker aslinya kayak dive biasa.
+    const isSingleKawasan = cluster.members.length === 1
     const zones: CityMapZone[] = cluster.members.map((member) => ({
       kawasan: member.kawasan,
       lat: member.lat,
@@ -160,8 +164,8 @@ export default function GlobeMapTransition() {
       center: [cluster.lat, cluster.lng],
       zoom: 13,
       markers,
-      zones,
-      kawasan: cluster.members.length === 1 ? cluster.members[0].kawasan : undefined,
+      zones: isSingleKawasan ? undefined : zones,
+      kawasan: isSingleKawasan ? cluster.members[0].kawasan : undefined,
     })
   }
 

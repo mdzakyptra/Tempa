@@ -37,7 +37,17 @@ interface CityMapProps {
   resetExpandTrigger?: number
   heatmap?: boolean
   className?: string
+  /** Mapbox style URL — default tetap light-v11 (minimalis, brand app). Override buat momen yang butuh peta lebih "hidup"/berwarna. */
+  mapStyle?: string
+  /** Muter bearing pelan terus-terusan — dekoratif, default off. */
+  autoRotate?: boolean
+  /** Marker jadi titik nge-pulse (radar ping) alih-alih pin biru default. */
+  pulseMarkers?: boolean
+  /** Sembunyiin logo Mapbox & tombol info attribution. */
+  hideAttribution?: boolean
 }
+
+const DEFAULT_STYLE = 'mapbox://styles/mapbox/satellite-streets-v12'
 
 //<---------- zoneColor -------------->
 function zoneColor(count: number) {
@@ -46,23 +56,30 @@ function zoneColor(count: number) {
   return '#eab308'
 }
 
-//<---------- zoneRadiusMeters -------------->
-// Grows with report count but capped — a busy kawasan's circle stays legible
-// instead of swallowing its neighbors on the same city view.
-function zoneRadiusMeters(count: number) {
-  return Math.min(180 + count * 35, 600)
-}
-
-// metersToPixelsAtLat — GeoJSON circles need a screen-space radius, so a
-// literal-meter circle has to be reprojected on every zoom tick.
-function metersToPixelsAtLat(meters: number, lat: number, zoom: number) {
-  return meters / (0.075 * Math.cos((lat * Math.PI) / 180) * 2 ** (24 - zoom))
+//<---------- zoneRadiusPx -------------->
+// Radius pixel TETAP, gak dihitung dari radius meter dunia nyata lagi —
+// dulu circle dikonversi dari meter ke pixel per zoom level, jadi makin
+// zoom out target klik-nya makin ngecil di layar (kebalikan dari yang
+// dibutuhin). Radius pixel murni gak kepengaruh zoom sama sekali, jadi
+// tetep gampang diklik di zoom level manapun.
+function zoneRadiusPx(count: number) {
+  return Math.min(28 + count * 4, 70)
 }
 
 // Stable reference for the "no zones" default — a literal `[]` default
 // parameter would create a new array every render and defeat the
 // `zones !== prevZones` check below, causing an infinite render loop.
 const NO_ZONES: CityMapZone[] = []
+
+//<---------- pulseMarkerElement -------------->
+function pulseMarkerElement(): HTMLDivElement {
+  const el = document.createElement('div')
+  el.className = 'relative flex size-4 cursor-pointer items-center justify-center'
+  el.innerHTML =
+    '<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-60"></span>' +
+    '<span class="relative inline-flex size-3 rounded-full bg-blue-600 ring-2 ring-white"></span>'
+  return el
+}
 
 //<---------- boundsFromMarkers -------------->
 function boundsFromMarkers(markers: CityMapMarker[]): mapboxgl.LngLatBounds {
@@ -85,6 +102,10 @@ export default function CityMap({
   resetExpandTrigger,
   heatmap = false,
   className = 'h-full w-full',
+  mapStyle = DEFAULT_STYLE,
+  autoRotate = false,
+  pulseMarkers = false,
+  hideAttribution = false,
 }: CityMapProps) {
   const resolvedCenter: [number, number] = center ?? (markers[0] ? [markers[0].lat, markers[0].lng] : [-2.5, 118])
   const resolvedZoom = center || markers.length > 0 ? zoom : 4
@@ -133,18 +154,38 @@ export default function CityMap({
 
     const map = new mapboxgl.Map({
       container,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: mapStyle,
       ...initialView,
-      pitch: 55,
+      pitch: 62,
       bearing: -12,
       antialias: true,
+      attributionControl: !hideAttribution,
     })
     mapRef.current = map
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-left')
 
+    // Logo control Mapbox nempel telat (bukan pas constructor/'load') DAN
+    // Mapbox nyalain balik `style.display='block'`-nya sendiri tiap
+    // source/style data update — observer harus jagain childList (nunggu
+    // elemennya nongol) SEKALIGUS attribute style-nya (nangkep tiap kali
+    // Mapbox nyalain balik), bukan cuma sekali hide terus disconnect.
+    let logoObserver: MutationObserver | undefined
+    if (hideAttribution) {
+      const hideLogo = () => {
+        const logo = container.querySelector<HTMLElement>('.mapboxgl-ctrl-logo')?.closest<HTMLElement>('.mapboxgl-ctrl')
+        if (logo && logo.style.display !== 'none') logo.style.display = 'none'
+      }
+      hideLogo()
+      logoObserver = new MutationObserver(hideLogo)
+      logoObserver.observe(container, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] })
+    }
+
     map.on('load', () => {
       // 3D building extrusions — the actual "3D" in this map, not just tilt.
+      // coalesce ke tinggi default (8m ~ 2 lantai) — banyak area (mis. jalan
+      // residensial di luar kota besar) gak punya data `height` di OSM,
+      // tanpa fallback ini gedungnya rata alias gak keliatan 3D sama sekali.
       const layers = map.getStyle()?.layers
       const labelLayerId = layers?.find((l) => l.type === 'symbol' && l.layout?.['text-field'])?.id
       map.addLayer(
@@ -152,18 +193,43 @@ export default function CityMap({
           id: '3d-buildings',
           source: 'composite',
           'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'],
+          // Dulu ada filter ['==','extrude','true'] — Mapbox cuma nandain
+          // extrude=true buat gedung yang UDAH punya data height, jadi
+          // fallback height di bawah gak pernah kena (gedung tanpa data
+          // ke-filter keluar duluan). Tanpa filter, SEMUA footprint gedung
+          // di-extrude, fallback-nya beneran kepake.
           type: 'fill-extrusion',
           minzoom: 14,
           paint: {
             'fill-extrusion-color': '#d4d4d4',
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-height': ['coalesce', ['get', 'height'], 8],
+            'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
             'fill-extrusion-opacity': 0.75,
           },
         },
         labelLayerId,
       )
+
+      // Terrain (elevasi tanah beneran, bukan cuma gedung) — data global,
+      // kepake di lokasi manapun, gak tergantung kelengkapan data gedung.
+      map.addSource('mapbox-dem', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        tileSize: 512,
+        maxzoom: 14,
+      })
+      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.4 })
+
+      // Sky layer — atmosphere di horizon, biar kerasa scene 3D beneran
+      // pas pitched, bukan cuma foto miring.
+      map.addLayer({
+        id: 'sky',
+        type: 'sky',
+        paint: {
+          'sky-type': 'atmosphere',
+          'sky-atmosphere-sun-intensity': 15,
+        },
+      })
 
       map.addSource('zones', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addSource('reports-heatmap', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -171,13 +237,15 @@ export default function CityMap({
         id: 'zones-fill',
         type: 'circle',
         source: 'zones',
+        // Opacity & stroke dinaikin — latar satelit warna-warni bikin fill
+        // tipis lama (0.18/0.5) nyaris ilang, ketutup ributnya citra.
         paint: {
           'circle-radius': ['get', 'radiusPx'],
           'circle-color': ['get', 'color'],
-          'circle-opacity': 0.18,
+          'circle-opacity': 0.32,
           'circle-stroke-color': ['get', 'color'],
-          'circle-stroke-opacity': 0.5,
-          'circle-stroke-width': 1.5,
+          'circle-stroke-opacity': 0.9,
+          'circle-stroke-width': 2.5,
         },
       })
       map.addLayer({
@@ -225,6 +293,7 @@ export default function CityMap({
     })
 
     return () => {
+      logoObserver?.disconnect()
       map.remove()
       mapRef.current = null
     }
@@ -259,8 +328,27 @@ export default function CityMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedLat, resolvedLng, resolvedZoom, boundsSignature, center])
 
-  // Zone circles — re-project radius in pixels on every zoom tick so it
-  // still reads as a fixed real-world radius while pitched/zoomed.
+  //<---------- autoRotate ------------>
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !autoRotate) return
+
+    let rafId: number
+    const spin = () => {
+      map.setBearing((map.getBearing() + 0.06) % 360)
+      rafId = requestAnimationFrame(spin)
+    }
+    const start = () => {
+      rafId = requestAnimationFrame(spin)
+    }
+
+    if (map.loaded()) start()
+    else map.once('load', start)
+    return () => cancelAnimationFrame(rafId)
+  }, [autoRotate])
+
+  // Zone circles — radiusPx sekarang pixel murni (lihat zoneRadiusPx), gak
+  // perlu lagi re-set data tiap zoom tick buat kompensasi re-proyeksi.
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -268,7 +356,6 @@ export default function CityMap({
     const setZoneData = () => {
       const source = map.getSource('zones') as mapboxgl.GeoJSONSource | undefined
       if (!source) return
-      const currentZoom = map.getZoom()
       source.setData({
         type: 'FeatureCollection',
         features: zones.map((zone) => ({
@@ -277,7 +364,7 @@ export default function CityMap({
           properties: {
             kawasan: zone.kawasan,
             color: zoneColor(zone.count),
-            radiusPx: metersToPixelsAtLat(zoneRadiusMeters(zone.count), zone.lat, currentZoom),
+            radiusPx: zoneRadiusPx(zone.count),
           },
         })),
       })
@@ -285,10 +372,6 @@ export default function CityMap({
 
     if (map.loaded()) setZoneData()
     else map.once('load', setZoneData)
-    map.on('zoom', setZoneData)
-    return () => {
-      map.off('zoom', setZoneData)
-    }
   }, [zones])
 
   //<---------- updateHeatmap ------------>
@@ -323,7 +406,9 @@ export default function CityMap({
     const attach = () => {
       markerObjectsRef.current.forEach((m) => m.remove())
       markerObjectsRef.current = (heatmap ? [] : visibleMarkers).map((marker) => {
-        const mbMarker = new mapboxgl.Marker({ color: '#2563eb' }).setLngLat([marker.lng, marker.lat]).addTo(map)
+        const mbMarker = pulseMarkers
+          ? new mapboxgl.Marker({ element: pulseMarkerElement() }).setLngLat([marker.lng, marker.lat]).addTo(map)
+          : new mapboxgl.Marker({ color: '#2563eb' }).setLngLat([marker.lng, marker.lat]).addTo(map)
         if (marker.label) mbMarker.setPopup(new mapboxgl.Popup({ offset: 24 }).setText(marker.label))
         mbMarker.getElement().addEventListener('click', () => onMarkerClickRef.current?.(marker))
         return mbMarker
@@ -333,7 +418,7 @@ export default function CityMap({
     if (map.loaded()) attach()
     else map.once('load', attach)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heatmap, visibleMarkers])
+  }, [heatmap, visibleMarkers, pulseMarkers])
 
   if (!MAPBOX_TOKEN) {
     return (
