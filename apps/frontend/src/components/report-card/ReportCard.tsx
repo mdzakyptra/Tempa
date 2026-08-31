@@ -64,12 +64,20 @@ export default function ReportCard({ report, index, onSelect }: ReportCardProps)
       {hasPhoto && (
         <div className="absolute inset-0" aria-hidden>
           <img src={report.foto_url!} alt="" className="size-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_36%,rgba(255,255,255,0.45)_68%,rgba(255,255,255,0.9)_88%,#fff_100%)] backdrop-blur-[1px]" />
+          {/* Vignette lokal — bercak blur gelap kecil persis di titik angka
+              indeks duduk (kiri-atas), bukan penggelapan seluruh foto. Ini
+              yang bikin "01" dijamin kebaca meski fotonya kebetulan
+              terang/polos di situ, tanpa bikin foto secara umum jadi redup. */}
+          <div className="absolute left-0 top-0 hidden h-28 w-28 rounded-full bg-black/30 blur-2xl sm:block" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.16)_36%,rgba(255,255,255,0.55)_68%,rgba(255,255,255,0.9)_88%,#fff_100%)] backdrop-blur-[1px]" />
         </div>
       )}
       <span
         aria-hidden
-        className={cn('relative hidden shrink-0 select-none font-mono text-4xl font-black leading-none tracking-tighter transition-colors duration-300 sm:block', hasPhoto ? 'text-white drop-shadow-md group-hover:text-white' : 'text-black/10 group-hover:text-black/20')}
+        className={cn(
+          'relative hidden shrink-0 select-none font-mono text-4xl font-black leading-none tracking-tighter transition-colors duration-300 sm:block',
+          hasPhoto ? 'text-white [text-shadow:0_1px_3px_rgba(0,0,0,.6),0_4px_16px_rgba(0,0,0,.45)] group-hover:text-white' : 'text-black/10 group-hover:text-black/20',
+        )}
       >
         {String(index).padStart(2, '0')}
       </span>
@@ -77,8 +85,8 @@ export default function ReportCard({ report, index, onSelect }: ReportCardProps)
       <div className="relative min-w-0 flex-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-bold tracking-tight text-neutral-900">{report.judul}</h3>
-            <p className="mt-1 flex items-center gap-1 text-sm text-neutral-500">
+            <h3 className="truncate text-lg font-bold tracking-tight text-black">{report.judul}</h3>
+            <p className="mt-1 flex items-center gap-1 text-sm text-black">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">
                 {report.kawasan} &middot; {JENIS_KERUSAKAN_LABEL[report.jenis_kerusakan]}
@@ -91,17 +99,17 @@ export default function ReportCard({ report, index, onSelect }: ReportCardProps)
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-black">
             <span className={cn('h-1.5 w-1.5 rounded-full', TINGKAT_BAHAYA_DOT[report.tingkat_bahaya])} />
             {report.tingkat_bahaya}
           </span>
           {report.jalur_vital && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-black">
               <Route className="h-3 w-3" />
               Jalur vital
             </span>
           )}
-          <span className="ml-auto flex items-center gap-1 text-xs text-neutral-500">
+          <span className="ml-auto flex items-center gap-1 text-xs text-black">
             <ThumbsUp className="h-3.5 w-3.5" />
             {report.votes_count}
           </span>
