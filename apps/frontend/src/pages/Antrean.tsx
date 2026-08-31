@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelRightClose, PanelRightOpen } from 'lucide-react'
@@ -34,7 +34,10 @@ export default function Antrean() {
     jenis_kerusakan: '',
   })
   const [page, setPage] = useState(1)
-  const [isPanelOpen, setIsPanelOpen] = useState(false)
+  // Deep-link dari Panel Petugas (?laporan=<id>) — panel daftar langsung
+  // kebuka biar kartu yang di-highlight (lihat di bawah) kelihatan.
+  const laporanId = searchParams.get('laporan')
+  const [isPanelOpen, setIsPanelOpen] = useState(() => Boolean(laporanId))
   const [isHeatmap, setIsHeatmap] = useState(false)
 
   //<---------- handleFilterChange -------------->
@@ -76,6 +79,17 @@ export default function Antrean() {
 
   const isFilterActive = filter.kawasan !== '' || filter.jenis_kerusakan !== ''
 
+  const highlightedReport = laporanId ? semuaLaporan.find((report) => report.id === laporanId) : undefined
+
+  // Lompat ke halaman yang berisi laporan yang di-deep-link, sekali data
+  // datang — supaya kartunya kebaca di daftar, bukan ketutup di halaman lain.
+  useEffect(() => {
+    if (!laporanId || !semuaLaporanResponse) return
+    const index = laporanTersaring.findIndex((report) => report.id === laporanId)
+    if (index !== -1) setPage(Math.floor(index / 10) + 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [laporanId, semuaLaporanResponse])
+
   const markers: CityMapMarker[] = semuaLaporan
     .filter((report) => !filter.kawasan || report.kawasan === filter.kawasan)
     .filter((report) => !filter.jenis_kerusakan || report.jenis_kerusakan === filter.jenis_kerusakan)
@@ -95,7 +109,8 @@ export default function Antrean() {
             <CityMap
               key={isHeatmap ? 'heatmap' : 'markers'}
               markers={markers}
-              zoom={isHeatmap ? 4 : 12}
+              center={highlightedReport && highlightedReport.lat !== null && highlightedReport.lng !== null ? [highlightedReport.lat, highlightedReport.lng] : undefined}
+              zoom={highlightedReport ? 16 : isHeatmap ? 4 : 12}
               heatmap={isHeatmap}
               onMarkerClick={(marker) => navigateToReport(marker.id)}
             />
@@ -202,11 +217,16 @@ export default function Antrean() {
               <div className="flex flex-col gap-4">
                 {reports.map((report, i) => (
                   <ScrollReveal key={report.id} direction="up" duration={0.5} delay={Math.min(i, 5) * 0.05}>
-                    <ReportCard
-                      report={report}
-                      index={(meta ? (meta.page - 1) * meta.limit : 0) + i + 1}
-                      onSelect={() => navigateToReport(report.id)}
-                    />
+                    <div
+                      ref={report.id === laporanId ? (el) => el?.scrollIntoView({ block: 'center', behavior: 'smooth' }) : undefined}
+                      className={report.id === laporanId ? 'rounded-2xl ring-2 ring-neutral-900' : ''}
+                    >
+                      <ReportCard
+                        report={report}
+                        index={(meta ? (meta.page - 1) * meta.limit : 0) + i + 1}
+                        onSelect={() => navigateToReport(report.id)}
+                      />
+                    </div>
                   </ScrollReveal>
                 ))}
               </div>
