@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowRight, ChevronLeft, LockKeyhole, UserRound } from 'lucide-react'
+import { ArrowRight, ChevronLeft } from 'lucide-react'
 import { ApiError, apiFetch } from '../lib/api'
 import { storeTokens, type TokenPair } from '../lib/auth'
 
@@ -109,7 +109,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="font-display min-h-screen bg-neutral-50">
       {curtain !== 'idle' && (
         <motion.div
           initial={{ x: curtain === 'closing' ? (curtainDirection === 'rtl' ? '100%' : '-100%') : '0%' }}
@@ -129,8 +129,29 @@ export default function Auth() {
         </motion.div>
       )}
 
-      <section className="grid min-h-screen w-full bg-white md:grid-cols-2">
-        <div className={`relative flex flex-col justify-center p-6 sm:p-10 lg:p-16 ${mode === 'login' ? 'md:order-1' : 'md:order-2'}`}>
+      <section className="relative grid min-h-screen w-full overflow-hidden bg-neutral-950 md:grid-cols-2">
+        {/* Dither full-bleed di belakang SELURUH section (bukan cuma di dalam
+            <aside>) — biar sudut rounded panel putih motong tekstur dither
+            yang sama nyambung, bukan nyingkap warna polos bg-neutral-950
+            section yang nggak ada tekstur dither-nya. */}
+        <div className="absolute inset-0">
+          <Suspense fallback={<div className="h-full w-full bg-neutral-950" />}>
+            <Dither
+              waveColor={[0.38, 0.55, 0.45]}
+              backgroundColor={[0.02, 0.03, 0.02]}
+              colorNum={4}
+              pixelSize={3}
+              waveAmplitude={0.3}
+              waveFrequency={3}
+              waveSpeed={0.05}
+              mouseRadius={0.3}
+            />
+          </Suspense>
+        </div>
+
+        <div
+          className={`relative z-10 flex flex-col justify-center overflow-hidden bg-white p-6 sm:p-10 lg:p-16 ${mode === 'login' ? 'md:order-1 md:rounded-r-[3rem]' : 'md:order-2 md:rounded-l-[3rem]'}`}
+        >
         <Link
           to="/antrean"
           aria-label="Kembali ke antrean"
@@ -140,9 +161,7 @@ export default function Auth() {
           Kembali
         </Link>
         <div className="mx-auto w-full max-w-sm">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-neutral-900 text-white">
-          {mode === 'login' ? <LockKeyhole className="size-5" aria-hidden /> : <UserRound className="size-5" aria-hidden />}
-          </div>
+          <img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-8 w-auto" />
           <h1 className="mt-5 text-2xl font-bold text-neutral-900">
             {mode === 'login' ? 'Masuk ke Aspiraku' : 'Buat akun warga'}
           </h1>
@@ -233,26 +252,14 @@ export default function Auth() {
         </div>
 
         <aside
-          className={`relative hidden overflow-hidden bg-neutral-950 md:block ${mode === 'login' ? 'md:order-2' : 'md:order-1'}`}
+          className={`relative z-10 hidden md:block ${mode === 'login' ? 'md:order-2' : 'md:order-1'}`}
           aria-label="Visualisasi dither Aspiraku"
         >
-          <Suspense fallback={<div className="h-full w-full bg-neutral-950" />}>
-            <Dither
-              waveColor={[0.38, 0.55, 0.45]}
-              backgroundColor={[0.02, 0.03, 0.02]}
-              colorNum={4}
-              pixelSize={3}
-              waveAmplitude={0.3}
-              waveFrequency={3}
-              waveSpeed={0.05}
-              mouseRadius={0.3}
-            />
-          </Suspense>
           <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
           <div className="absolute inset-0 flex flex-col justify-center p-8 lg:p-10">
-            <p className="pointer-events-none text-xs font-semibold tracking-[0.2em] text-white/60 uppercase">Aspiraku</p>
-            <p className="pointer-events-none mt-3 max-w-sm text-2xl font-semibold tracking-tight text-white">Suara warga, gerak kota.</p>
-            <p className="pointer-events-none mt-2 max-w-sm text-sm leading-relaxed text-white/70">Pantau laporan lingkungan dan dukung perubahan yang terlihat.</p>
+            <p className="pointer-events-none text-xs font-semibold tracking-[0.2em] text-white uppercase">Aspiraku</p>
+            <p className="pointer-events-none mt-3 max-w-sm text-2xl font-bold tracking-wide text-white uppercase">Suara warga, gerak kota.</p>
+            <p className="pointer-events-none mt-2 max-w-sm text-sm leading-relaxed text-white uppercase">Pantau laporan lingkungan dan dukung perubahan yang terlihat.</p>
 
             <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
               <p className="text-sm text-white/80">
