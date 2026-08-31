@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useRef } from "react";
 import GlobeStoryScene from "../backgrounds/globe-story/Scene";
+import HeroMapTexture from "../backgrounds/HeroMapTexture";
 import { BEATS } from "../backgrounds/globe-story/beats";
 import SplitText from "../animations/SplitText";
 import FlipWords from "../animations/FlipWords";
@@ -15,6 +16,7 @@ export default function HeroStatic() {
   return (
     <section id="top" className="relative">
       <div className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-28">
+        <HeroMapTexture className="-z-20" />
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
           <GlobeStoryScene progressRef={progressRef} />
         </div>
