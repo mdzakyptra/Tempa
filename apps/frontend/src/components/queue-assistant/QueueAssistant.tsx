@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Bot, LoaderCircle, MessageCircle, Send, X } from 'lucide-react'
+import { LoaderCircle, MessageCircle, Send, X } from 'lucide-react'
 import { ApiError, apiFetch } from '../../lib/api'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 
@@ -95,8 +95,27 @@ export default function QueueAssistant({ reportId, lifted = false }: QueueAssist
             className="pointer-events-auto absolute inset-0 flex flex-col overflow-hidden bg-white sm:static sm:mb-3 sm:h-[min(32rem,calc(100dvh-7rem))] sm:w-[calc(100vw-2rem)] sm:max-w-sm sm:rounded-2xl sm:border sm:border-neutral-200 sm:shadow-2xl sm:origin-bottom-right"
           >
           <header className="flex items-start justify-between gap-3 border-b border-neutral-100 bg-neutral-900 px-4 py-3 text-white">
-            <div className="flex gap-2.5">
-              <Bot className="mt-0.5 size-5 shrink-0" aria-hidden />
+            <div className="flex items-center gap-2.5">
+              {/* ai.png hitam solid — dirender sebagai mask putih (bg
+                  currentColor di-mask bentuk PNG-nya) biar keliatan di
+                  header gelap, gantiin ikon Bot dari lucide. Ukurannya
+                  sengaja lebih gede (size-9) & di-center (items-center di
+                  parent) biar sepadan sama tinggi blok teks dua baris di
+                  sampingnya, bukan nempel rata atas kayak ikon kecil. */}
+              <span
+                className="size-9 shrink-0 bg-white"
+                style={{
+                  WebkitMaskImage: 'url(/ai.png)',
+                  maskImage: 'url(/ai.png)',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                }}
+                aria-hidden
+              />
               <div>
                 <h2 className="font-semibold">Asisten Antrean</h2>
                 <p className="text-xs text-neutral-300">Tanya posisi dan skor laporan</p>
