@@ -7,10 +7,11 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import GlobeStoryScene from "../backgrounds/globe-story/Scene";
+import HeroMapTexture from "../backgrounds/HeroMapTexture";
 import { BEATS, beatRange } from "../backgrounds/globe-story/beats";
-import { StepRail, ScoreCard, VoteCounter } from "./hero-overlays";
+import { StepRail, ScoreCard, ScoreCardMobile, VoteCounter, VoteCounterMobile } from "./hero-overlays";
 import SplitText from "../animations/SplitText";
 import FlipWords from "../animations/FlipWords";
 import MagneticButton from "../animations/MagneticButton";
@@ -37,35 +38,54 @@ function BeatPanel({ progress, index }: { progress: MotionValue<number>; index: 
   const fadeIn = start + (end - start) * 0.18;
   const fadeOut = end - (end - start) * 0.18;
   const opacity = useTransform(progress, [start, fadeIn, fadeOut, end], [0, 1, 1, 0]);
-  const y = useTransform(progress, [start, fadeIn], [24, 0]);
+  const y = useTransform(progress, [start, fadeIn, fadeOut, end], ["100vh", "0vh", "0vh", "-100vh"]);
   const beat = BEATS[index];
   const withCard = index >= 2;
 
-  const content = (
+  const title = (
+    <h2 className="text-3xl font-black leading-[1.05] tracking-tighter sm:text-4xl md:text-5xl">
+      {beat.title}
+    </h2>
+  );
+  const description = (
+    <p className="max-w-sm text-balance text-neutral-600">{beat.desc}</p>
+  );
+  const desktopContent = (
     <>
-      <span className="mb-4 inline-block font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">
-        {beat.eyebrow}
-      </span>
-      <h2 className="mb-4 text-3xl font-black leading-[1.05] tracking-tighter sm:text-4xl md:text-5xl">
-        {beat.title}
-      </h2>
-      <p className="max-w-sm text-balance text-neutral-600">{beat.desc}</p>
+      <div className="mb-4">{title}</div>
+      {description}
     </>
   );
 
   return (
-    <motion.div
-      style={{ opacity, y }}
-      className="pointer-events-none absolute left-6 top-1/2 z-10 max-w-md -translate-y-1/2 md:left-16"
-    >
-      {withCard ? (
-        <div className="rounded-2xl border border-black/10 bg-white/75 p-6 shadow-sm backdrop-blur-md">
-          {content}
-        </div>
-      ) : (
-        content
-      )}
-    </motion.div>
+    <>
+      <motion.div
+        style={{ opacity, y }}
+        className="pointer-events-none absolute inset-x-6 top-20 z-10 text-center md:hidden"
+      >
+        {title}
+      </motion.div>
+      <motion.div
+        style={{ opacity, y }}
+        className="pointer-events-none absolute inset-x-6 bottom-20 z-10 flex flex-col items-center text-center md:hidden"
+      >
+        {description}
+        {index === 1 && <ScoreCardMobile progress={progress} />}
+        {index === 2 && <VoteCounterMobile progress={progress} />}
+      </motion.div>
+      <motion.div
+        style={{ opacity, y }}
+        className="pointer-events-none absolute left-6 top-1/2 z-10 hidden max-w-md -translate-y-1/2 md:block md:left-16"
+      >
+        {withCard ? (
+          <div className="rounded-2xl border border-black/10 bg-white/75 p-6 shadow-sm backdrop-blur-md">
+            {desktopContent}
+          </div>
+        ) : (
+          desktopContent
+        )}
+      </motion.div>
+    </>
   );
 }
 
@@ -86,9 +106,21 @@ export default function HeroScrollStack() {
     setIntroVisible(v < 0.08);
   });
 
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
   const introOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
   const introScale = useTransform(scrollYProgress, [0, 0.08], [1, 0.9]);
-  const globeX = useTransform(scrollYProgress, [0, 0.08], ["-24%", "0%"]);
+  // globe drifts in from the left on desktop to clear space for the
+  // right-aligned intro text; on mobile the text sits above/below the
+  // globe instead, so it stays centered from the start.
+  const globeX = useTransform(scrollYProgress, [0, 0.08], isDesktop ? ["-24%", "0%"] : ["0%", "0%"]);
   const hintOpacity = useTransform(scrollYProgress, [0, 0.04], [1, 0]);
   const ctaOpacity = useTransform(scrollYProgress, [0.93, 1], [0, 1]);
   const ctaY = useTransform(scrollYProgress, [0.93, 1], [16, 0]);
@@ -115,8 +147,13 @@ export default function HeroScrollStack() {
         onMouseMove={onMove}
         className="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden px-6"
       >
+        <HeroMapTexture />
         <motion.div style={{ x: globeX }} className="absolute inset-0">
-          <GlobeStoryScene progressRef={progressRef} screenAnchor={{ x: markerX, y: markerY }} />
+          <GlobeStoryScene
+            progressRef={progressRef}
+            screenAnchor={{ x: markerX, y: markerY }}
+            compact={!isDesktop}
+          />
         </motion.div>
 
         <Corner className="left-6 top-24 md:left-10" />
@@ -129,15 +166,15 @@ export default function HeroScrollStack() {
         {introVisible && (
           <motion.div
             style={{ opacity: introOpacity, scale: introScale }}
-            className="pointer-events-none absolute inset-x-0 top-16 z-10 flex origin-top flex-col items-center px-6 text-center md:inset-x-auto md:inset-y-0 md:right-6 md:top-0 md:w-full md:max-w-2xl md:origin-right md:items-end md:justify-center md:px-0 md:text-right lg:right-16 lg:max-w-3xl"
+            className="pointer-events-none absolute inset-x-0 inset-y-0 z-10 flex origin-top flex-col items-center justify-between px-6 pb-20 pt-16 text-center md:inset-x-auto md:inset-y-0 md:right-6 md:top-0 md:w-full md:max-w-2xl md:origin-right md:items-end md:justify-center md:px-0 md:py-0 md:text-right lg:right-16 lg:max-w-3xl"
           >
             
 
             <motion.h1
               style={{ x: headX, y: headY }}
-              className="max-w-5xl text-5xl font-black leading-[0.95] tracking-tighter sm:text-7xl md:max-w-2xl md:text-4xl lg:max-w-3xl lg:text-5xl xl:text-6xl"
+              className="max-w-xs text-4xl font-black leading-[0.95] tracking-tighter sm:max-w-xl sm:text-5xl md:max-w-2xl md:text-4xl lg:max-w-3xl lg:text-5xl xl:text-6xl"
             >
-              <span className="block whitespace-nowrap">
+              <span className="block md:whitespace-nowrap">
                 <SplitText by="chars" text="Antrean perbaikan kota," />
               </span>
               <span className="text-stroke">
@@ -167,8 +204,8 @@ export default function HeroScrollStack() {
           <BeatPanel key={i} progress={scrollYProgress} index={i} />
         ))}
 
-        <ScoreCard progress={scrollYProgress} />
-        <VoteCounter progress={scrollYProgress} />
+        <ScoreCard progress={scrollYProgress} markerX={markerX} markerY={markerY} />
+        <VoteCounter progress={scrollYProgress} markerX={markerX} markerY={markerY} />
         <StepRail progress={scrollYProgress} />
 
         <motion.div
