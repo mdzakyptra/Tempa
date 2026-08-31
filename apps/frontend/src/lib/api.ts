@@ -9,6 +9,10 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:30
 // bukan cuma satu halaman — pakai path ini, bukan '/reports' polos.
 export const ALL_REPORTS_PATH = '/reports?limit=500'
 
+// Endpoint yang jalan tanpa sesi sama sekali — requestApi skip nyoba
+// refresh access token dulu buat path-path ini (lihat komentarnya di bawah).
+const PUBLIC_AUTH_PATHS = new Set(['/auth/login', '/auth/register'])
+
 // Envelope sukses/gagal dari backend NestJS — lihat ApiResponseDto &
 // ApiErrorResponseDto di apps/backend/src/common/dto/.
 interface ApiSuccessEnvelope<T> {
@@ -78,7 +82,13 @@ async function requestApi<T>(
 ): Promise<{ body: ApiPaginatedEnvelope<T> }> {
   let response: Response
   try {
-    const token = await getValidAccessToken()
+    // /auth/login & /auth/register jalan tanpa sesi — skip nyoba refresh
+    // access token dulu di sini. Kalau di-skip, request ini nunggu 1
+    // round-trip /auth/refresh yang GAK PERLU (dan kalau refresh token lama
+    // di sessionStorage udah invalid, tetep gagal juga) sebelum request
+    // login/register-nya sendiri sempat terkirim — nambah delay yang bikin
+    // form kerasa "gantung" padahal cuma nunggu langkah yang gak relevan.
+    const token = PUBLIC_AUTH_PATHS.has(path) ? null : await getValidAccessToken()
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
