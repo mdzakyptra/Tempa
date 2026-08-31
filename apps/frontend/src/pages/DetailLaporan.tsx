@@ -1,13 +1,15 @@
+import { lazy, Suspense } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { apiFetch, ApiError } from '../lib/api'
 import { StatusTimeline } from '../components/status-timeline'
 import { ScoreBreakdown } from '../components/score-breakdown'
-import { CityMap } from '../components/city-map'
 import { VoteButton } from '../components/vote-button'
 import type { ReportListItem } from '../components/report-card'
 import NotFound from './NotFound'
+
+const CityMap = lazy(() => import('../components/city-map/CityMap'))
 
 
 // Mirror apps/backend/src/photos/dto/report-photo-response.dto.ts
@@ -131,7 +133,9 @@ export default function DetailLaporan({ isOverlay = false }: DetailLaporanProps)
           <div className="mt-4">
             {report && report.lat !== null && report.lng !== null ? (
               <div className="h-[360px] overflow-hidden rounded-2xl border border-neutral-200 md:h-[420px]">
-                <CityMap markers={[{ id: report.id, lat: report.lat, lng: report.lng, label: report.judul }]} />
+                <Suspense fallback={<div className="h-full w-full animate-pulse bg-neutral-100" />}>
+                  <CityMap markers={[{ id: report.id, lat: report.lat, lng: report.lng, label: report.judul }]} />
+                </Suspense>
               </div>
             ) : (
               <div className="flex h-[360px] items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-400 md:h-[420px]">
