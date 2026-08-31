@@ -1,5 +1,6 @@
 import ScrollProgress from '../components/landing/animations/ScrollProgress'
 import CustomCursor from '../components/landing/animations/CustomCursor'
+import SmoothScroll from '../components/landing/SmoothScroll'
 import Navbar from '../components/landing/sections/Navbar'
 import Hero from '../components/landing/sections/Hero'
 import WorkStack from '../components/landing/sections/WorkStack'
@@ -12,6 +13,7 @@ import HabitFaqScroller from '../components/landing/sections/HabitFaqScroller'
 export default function Beranda() {
   return (
     <div className="font-display overflow-x-clip bg-white text-black antialiased">
+      <SmoothScroll />
       <ScrollProgress />
       <CustomCursor />
       <div className="grain-overlay" aria-hidden />
