@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelBottomClose, PanelBottomOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { ALL_REPORTS_PATH, apiFetchPaginated } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
 import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
 import { CityMap, type CityMapMarker } from '../components/city-map'
+import { useSetQueueAssistantLifted } from '../lib/queue-assistant-lift'
 import ScrollReveal from '../components/landing/animations/ScrollReveal'
 
 //<---------- CardSkeleton -------------->
@@ -39,6 +40,7 @@ export default function Antrean() {
   const laporanId = searchParams.get('laporan')
   const [isPanelOpen, setIsPanelOpen] = useState(() => Boolean(laporanId))
   const [isHeatmap, setIsHeatmap] = useState(false)
+  useSetQueueAssistantLifted(isPanelOpen)
 
   //<---------- handleFilterChange -------------->
   // Ganti filter selalu balik ke halaman 1 — halaman lama bisa nggak ada
@@ -122,7 +124,7 @@ export default function Antrean() {
           </div>
         )}
 
-        <div className="absolute top-4 left-4 z-[500] flex items-center gap-2">
+        <div className="absolute top-4 left-12 z-[500] flex items-center gap-2">
           <div className="pointer-events-none rounded-full border border-black/10 bg-white/90 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-600 shadow-sm backdrop-blur-sm">
             {isHeatmap ? 'Peta kepadatan' : `${markers.length} titik di peta`}
           </div>
@@ -137,7 +139,7 @@ export default function Antrean() {
         </div>
 
         {isHeatmap && (
-          <div className="pointer-events-none absolute right-4 bottom-4 z-[500] rounded-xl border border-black/10 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
+          <div className="pointer-events-none absolute right-4 bottom-30 z-[500] rounded-xl border border-black/10 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm sm:right-6 sm:bottom-24">
             <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-500">Kepadatan & prioritas</p>
             <div className="mt-1.5 h-2 w-32 rounded-full bg-linear-to-r from-yellow-200 via-orange-400 to-red-700" />
             <div className="mt-1 flex justify-between font-mono text-[9px] text-neutral-500">
@@ -151,11 +153,14 @@ export default function Antrean() {
           <button
             type="button"
             onClick={() => setIsPanelOpen(true)}
-            className="absolute right-4 bottom-4 z-[500] flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 sm:top-4 sm:right-4 sm:bottom-auto"
+            className="absolute right-4 bottom-15 z-[500] flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 sm:top-4 sm:right-4 sm:bottom-auto"
             aria-controls="queue-panel"
             aria-expanded="false"
           >
-            <PanelRightOpen className="size-4" aria-hidden />
+            {/* Panel-nya slide dari bawah di mobile, dari kanan di sm+ — ikon
+                ikutan arahnya (dorong ke atas vs dorong ke kiri). */}
+            <PanelBottomOpen className="size-4 sm:hidden" aria-hidden />
+            <PanelRightOpen className="hidden size-4 sm:block" aria-hidden />
             {meta ? `Daftar laporan · ${meta.total}` : 'Daftar laporan'}
           </button>
         )}
@@ -180,7 +185,8 @@ export default function Antrean() {
               className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300"
               aria-label="Tutup panel antrean"
             >
-              <PanelRightClose className="size-5" aria-hidden />
+              <PanelBottomClose className="size-5 sm:hidden" aria-hidden />
+              <PanelRightClose className="hidden size-5 sm:block" aria-hidden />
             </button>
           </div>
 
