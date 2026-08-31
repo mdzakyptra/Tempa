@@ -171,6 +171,15 @@ export default function Auth() {
               : 'Daftar untuk mendukung laporan serta mengikuti pembaruan antrean.'}
           </p>
 
+          {/* JEK-43 — dikirim dari PanelPetugas.tsx pas redirect gara-gara
+              belum login, biar warga nggak nyasar ke halaman login tanpa
+              tau kenapa (kriteria "redirect dengan pesan yang jelas"). */}
+          {searchParams.get('reason') === 'petugas' && (
+            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+              Halaman itu cuma buat petugas — masuk dulu buat lanjut.
+            </p>
+          )}
+
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           {mode === 'register' && (
             <div>

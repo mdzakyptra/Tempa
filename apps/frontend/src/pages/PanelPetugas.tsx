@@ -72,7 +72,7 @@ export default function PanelPetugas() {
   const isAllowed = !!user && user.peran === 'petugas' && ALLOWED_EMAILS.includes(user.email.toLowerCase())
 
   if (!user) {
-    return <Navigate to="/auth?redirect=/panel-petugas" />
+    return <Navigate to="/auth?redirect=/panel-petugas&reason=petugas" />
   }
 
   if (!isAllowed) {
