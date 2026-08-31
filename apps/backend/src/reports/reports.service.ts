@@ -44,6 +44,7 @@ interface ReportScoredRow {
   status: StatusLaporan;
   dibuat_pada: Date;
   dibuat_oleh: string | null;
+  foto_url: string | null;
   skor: number;
   skor_bahaya: number;
   skor_terdampak: number;
@@ -403,8 +404,14 @@ export class ReportsService {
     return Prisma.sql`
       WITH mentah AS (
         SELECT
-          id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
+          r.id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
           estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh,
+          (
+            SELECT url_foto FROM report_photos
+            WHERE report_id = r.id
+            ORDER BY id ASC
+            LIMIT 1
+          ) AS foto_url,
           (CASE tingkat_bahaya
             WHEN 'rendah' THEN 0.25
             WHEN 'sedang' THEN 0.5
@@ -414,8 +421,8 @@ export class ReportsService {
           (estimasi_terdampak + votes_count)::float8 AS jumlah_terdampak,
           EXTRACT(EPOCH FROM (now() - dibuat_pada))::float8 AS detik_menunggu,
           (CASE WHEN jalur_vital THEN 1.0 ELSE 0.0 END)::float8 AS komponen_jalur_vital
-        FROM reports
-        WHERE digabung_ke_id IS NULL
+        FROM reports r
+        WHERE r.digabung_ke_id IS NULL
       ),
       dinormalisasi AS (
         SELECT
@@ -426,7 +433,7 @@ export class ReportsService {
       )
       SELECT
         id, judul, deskripsi, kawasan, lat, lng, jenis_kerusakan, tingkat_bahaya,
-        estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh,
+        estimasi_terdampak, jalur_vital, votes_count, status, dibuat_pada, dibuat_oleh, foto_url,
         ROUND((
           komponen_bahaya * ${Prisma.raw(String(BOBOT_BAHAYA))}
           + COALESCE(komponen_terdampak, 0) * ${Prisma.raw(String(BOBOT_TERDAMPAK))}
@@ -458,6 +465,7 @@ export class ReportsService {
       status: row.status,
       dibuat_pada: row.dibuat_pada,
       dibuat_oleh: row.dibuat_oleh,
+      foto_url: row.foto_url,
       skor: row.skor,
       skor_komponen: {
         bahaya: row.skor_bahaya,

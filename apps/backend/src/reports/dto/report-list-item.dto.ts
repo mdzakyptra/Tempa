@@ -65,6 +65,9 @@ export class ReportListItemDto {
   @ApiProperty({ nullable: true, example: null })
   dibuat_oleh: string | null;
 
+  @ApiProperty({ nullable: true, description: 'Foto pertama laporan untuk thumbnail daftar' })
+  foto_url: string | null;
+
   @ApiProperty({ description: 'Skor prioritas akhir, skala 0-100' })
   skor: number;
 
