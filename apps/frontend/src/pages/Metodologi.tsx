@@ -1,217 +1,82 @@
-import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { AlertTriangle, Clock3, HeartHandshake, MapPinned, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, Check, Hourglass, Navigation, TrafficCone, UsersRound } from 'lucide-react'
+import CountUp from '../components/landing/animations/CountUp'
 
 
 const SCORE_COMPONENTS = [
-  {
-    name: 'Tingkat bahaya', short: 'Bahaya', weight: '35%', icon: ShieldAlert, color: 'text-red-700 bg-red-50',
-    description: 'Dipilih warga ketika membuat laporan. Makin tinggi tingkat bahayanya, makin besar nilainya.',
-    detail: 'Rendah = 25, sedang = 50, tinggi = 75, dan darurat = 100.',
-  },
-  {
-    name: 'Warga terdampak', short: 'Terdampak', weight: '25%', icon: HeartHandshake, color: 'text-blue-700 bg-blue-50',
-    description: 'Berasal dari estimasi warga terdampak saat pelaporan, ditambah jumlah dukungan warga.',
-    detail: 'Nilainya dibandingkan dengan laporan aktif yang memiliki dampak terbanyak.',
-  },
-  {
-    name: 'Lama menunggu', short: 'Menunggu', weight: '20%', icon: Clock3, color: 'text-amber-700 bg-amber-50',
-    description: 'Dihitung sejak laporan dibuat agar laporan yang lebih lama tidak terus terlewat.',
-    detail: 'Nilainya dibandingkan dengan laporan aktif yang paling lama menunggu.',
-  },
-  {
-    name: 'Jalur vital', short: 'Jalur vital', weight: '20%', icon: MapPinned, color: 'text-emerald-700 bg-emerald-50',
-    description: 'Menandai laporan di kawasan yang ditetapkan sebagai jalur vital oleh pengelola kota.',
-    detail: 'Nilai 100 bila berada di kawasan jalur vital, atau 0 bila tidak.',
-  },
+  { name: 'Tingkat bahaya', number: '01', weight: 35, icon: TrafficCone, color: 'bg-[#ff5c35]', text: 'text-[#ff5c35]', soft: 'bg-[#fff0eb]', description: 'Dipilih warga ketika membuat laporan. Makin tinggi tingkat bahayanya, makin besar nilainya.', detail: 'Rendah = 25, sedang = 50, tinggi = 75, dan darurat = 100.' },
+  { name: 'Warga terdampak', number: '02', weight: 25, icon: UsersRound, color: 'bg-[#5856d6]', text: 'text-[#5856d6]', soft: 'bg-[#efefff]', description: 'Berasal dari estimasi warga terdampak saat pelaporan, ditambah jumlah dukungan warga.', detail: 'Dibandingkan dengan laporan aktif yang memiliki dampak terbanyak.' },
+  { name: 'Lama menunggu', number: '03', weight: 20, icon: Hourglass, color: 'bg-[#e49a1f]', text: 'text-[#a66200]', soft: 'bg-[#fff7e6]', description: 'Dihitung sejak laporan dibuat agar laporan yang lebih lama tidak terus terlewat.', detail: 'Dibandingkan dengan laporan aktif yang paling lama menunggu.' },
+  { name: 'Jalur vital', number: '04', weight: 20, icon: Navigation, color: 'bg-[#13a87b]', text: 'text-[#087b58]', soft: 'bg-[#e9fbf5]', description: 'Menandai laporan di kawasan yang ditetapkan sebagai jalur vital oleh pengelola kota.', detail: 'Nilai 100 bila berada di kawasan jalur vital, atau 0 bila tidak.' },
 ]
 
-//<---------- RumusTerm -------------->
-// -ml-2 nyeimbangin px-2 di dalem, jadi teksnya tetep rata kiri persis di
-// bawah label "Rumus skor prioritas" — baik pas lagi jadi pill aktif maupun
-// nggak. Tanpa ini pill aktif (yang punya px-2 alignment sendiri) keliatan
-// geser dibanding baris lain.
-function RumusTerm({ component, isActive, isLast }: { component: (typeof SCORE_COMPONENTS)[number]; isActive: boolean; isLast: boolean }) {
+const TOTAL_WEIGHT = SCORE_COMPONENTS.reduce((total, component) => total + component.weight, 0)
+const DONUT_RADIUS = 52
+const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS
+const DONUT_SEGMENTS = SCORE_COMPONENTS.reduce<{ component: (typeof SCORE_COMPONENTS)[number]; dash: number; offset: number }[]>((segments, component) => {
+  const dash = (component.weight / TOTAL_WEIGHT) * DONUT_CIRCUMFERENCE
+  const offset = segments.length ? segments[segments.length - 1].offset + segments[segments.length - 1].dash : 0
+  return [...segments, { component, dash, offset }]
+}, [])
+
+//<---------- DotField ------------>
+function DotField() {
+  return <div className="absolute inset-0 opacity-35 [background-image:radial-gradient(#171817_1px,transparent_1px)] [background-size:13px_13px]" aria-hidden />
+}
+
+//<---------- ScoreDonut ------------>
+function ScoreDonut() {
   return (
-    <span className="relative -ml-2 inline-flex items-baseline rounded-lg px-2 py-1">
-      {isActive && (
-        <motion.span
-          layoutId="rumus-highlight"
-          className="absolute inset-0 rounded-lg bg-white/15"
-          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-        />
-      )}
-      <span className={`relative font-bold transition-colors duration-300 ${isActive ? 'text-white' : 'text-neutral-500'}`}>
-        ({component.short} × {component.weight})
-        {!isLast && <span className="ml-1.5 font-normal text-neutral-600">+</span>}
-      </span>
-    </span>
+    <div className="relative mx-auto size-36 shrink-0 sm:size-40">
+      <svg viewBox="0 0 140 140" className="size-full -rotate-90" aria-label="Komposisi bobot skor prioritas" role="img">
+        <circle cx="70" cy="70" r={DONUT_RADIUS} fill="none" stroke="currentColor" strokeWidth="14" className="text-neutral-100" />
+        {DONUT_SEGMENTS.map(({ component, dash, offset }, index) => <motion.circle key={component.name} cx="70" cy="70" r={DONUT_RADIUS} fill="none" stroke="currentColor" strokeWidth="14" strokeLinecap="round" className={component.text} strokeDasharray={`${Math.max(dash - 3, 0)} ${DONUT_CIRCUMFERENCE - dash + 3}`} style={{ strokeDashoffset: -offset }} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: index * 0.1, ease: 'easeOut' }} />)}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-3xl font-black tracking-tighter text-neutral-950">100</span><span className="font-mono text-[8px] uppercase tracking-[.16em] text-neutral-400">total</span></div>
+    </div>
   )
 }
 
-//<---------- RumusInteraktif -------------->
-// Pola "sticky scroll reveal" — kolom kiri scroll NORMAL (bukan pinned,
-// bukan dealt/numpuk), kolom kanan sticky nampilin rumus dengan suku yang
-// cocok sama komponen aktif di-highlight. Deteksi item aktif: listener
-// `scroll` di document dengan capture:true (bukan window — halaman ini
-// scroll di dalam <main className="overflow-y-auto">, lihat Layout.tsx),
-// rAF-throttled, hitung ulang dari geometri real semua section tiap event
-// — section yang titik tengahnya paling deket ke tengah viewport yang
-// menang. Robust terhadap scroll cepat/lompat jauh (sudah diverifikasi
-// sebelumnya).
-function RumusInteraktif() {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+//<---------- ScoreBar ------------>
+function ScoreBar() {
+  return <div className="overflow-hidden rounded-full bg-neutral-100 p-1"><div className="flex h-5 gap-1 overflow-hidden rounded-full">{SCORE_COMPONENTS.map((component) => <motion.div key={component.name} className={component.color} initial={{ width: 0 }} whileInView={{ width: `${component.weight}%` }} viewport={{ once: true }} transition={{ duration: 0.85, delay: 0.15, ease: 'easeOut' }} />)}</div></div>
+}
 
-  useEffect(() => {
-    let frame: number | null = null
-
-    const recomputeActiveIndex = () => {
-      frame = null
-      const viewportCenter = window.innerHeight / 2
-      let closestIndex = 0
-      let closestDistance = Infinity
-      sectionRefs.current.forEach((el, index) => {
-        if (!el) return
-        const rect = el.getBoundingClientRect()
-        const distance = Math.abs(rect.top + rect.height / 2 - viewportCenter)
-        if (distance < closestDistance) {
-          closestDistance = distance
-          closestIndex = index
-        }
-      })
-      setActiveIndex(closestIndex)
-    }
-
-    const onScroll = () => {
-      if (frame !== null) return
-      frame = requestAnimationFrame(recomputeActiveIndex)
-    }
-
-    recomputeActiveIndex()
-    document.addEventListener('scroll', onScroll, { passive: true, capture: true })
-    window.addEventListener('resize', onScroll, { passive: true })
-    return () => {
-      document.removeEventListener('scroll', onScroll, true)
-      window.removeEventListener('resize', onScroll)
-      if (frame !== null) cancelAnimationFrame(frame)
-    }
-  }, [])
-
+//<---------- MethodCard ------------>
+function MethodCard({ component }: { component: (typeof SCORE_COMPONENTS)[number] }) {
+  const Icon = component.icon
   return (
-    <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div>
-        {SCORE_COMPONENTS.map((component, index) => {
-          const isActive = index === activeIndex
-          const Icon = component.icon
-          return (
-            <div
-              key={component.name}
-              ref={(el) => {
-                sectionRefs.current[index] = el
-              }}
-              className="flex min-h-[45vh] flex-col justify-center lg:min-h-[55vh]"
-            >
-              <div className="flex items-start gap-4">
-                <div className={`mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl transition-opacity duration-500 ${component.color} ${isActive ? 'opacity-100' : 'opacity-40'}`}>
-                  <Icon className="size-5" aria-hidden />
-                </div>
-                <div>
-                  <span className={`text-sm font-medium transition-colors duration-500 ${isActive ? 'text-neutral-500' : 'text-neutral-300'}`}>
-                    Bobot {component.weight}
-                  </span>
-                  <h3 className={`mt-1 text-2xl font-bold tracking-tight transition-colors duration-500 sm:text-3xl ${isActive ? 'text-neutral-900' : 'text-neutral-300'}`}>
-                    {component.name}
-                  </h3>
-                  <p className={`mt-3 max-w-md text-sm leading-relaxed transition-colors duration-500 ${isActive ? 'text-neutral-600' : 'text-neutral-300'}`}>
-                    {component.description}
-                  </p>
-                  <p className={`mt-2 max-w-md text-xs leading-relaxed transition-colors duration-500 ${isActive ? 'text-neutral-500' : 'text-neutral-300'}`}>
-                    {component.detail}
-                  </p>
-
-                  {/* Fallback mobile — kolom kanan disembunyikan di bawah lg,
-                      jadi rumus polos (tanpa highlight) ditaruh di sini biar
-                      infonya tetap ada di layar sempit. */}
-                  <p className="mt-4 font-mono text-xs text-neutral-400 lg:hidden">
-                    ({component.short} × {component.weight})
-                  </p>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Dua lapis sengaja: wrapper LUAR polos (stretch penuh setinggi
-          baris grid — default align-items: stretch, TANPA h-fit) supaya
-          punya tinggi sepanjang 4 komponen; card sticky-nya ada di
-          wrapper DALAM yang pendek (setinggi card doang). Kalau `sticky`
-          ditaruh langsung di elemen yang sama dengan yang di-stretch
-          (satu div buat dua-duanya), elemen itu jadi SAMA TINGGINYA
-          dengan containing block-nya sendiri — nggak ada "ruang jalan"
-          buat sticky-nya geser, jadi kelihatan kayak nggak nempel sama
-          sekali. */}
-      <div className="hidden lg:block">
-        <div className="sticky top-24 rounded-3xl bg-neutral-900 p-6 text-white">
-          <p className="text-sm font-medium text-neutral-400">Rumus skor prioritas</p>
-          <div className="mt-3 flex flex-col items-start gap-1.5 text-lg font-semibold">
-            {SCORE_COMPONENTS.map((component, index) => (
-              <RumusTerm
-                key={component.name}
-                component={component}
-                isActive={index === activeIndex}
-                isLast={index === SCORE_COMPONENTS.length - 1}
-              />
-            ))}
-          </div>
-          <p className="mt-4 text-sm leading-relaxed text-neutral-400">
-            Masing-masing komponen dinilai pada skala 0–100. Hasil gabungannya dibulatkan hingga dua angka desimal.
-          </p>
-        </div>
-      </div>
-    </div>
+    <motion.article initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45 }} className="group relative overflow-hidden rounded-[1.75rem] border border-black/8 bg-white p-5 shadow-[0_12px_35px_-25px_rgba(0,0,0,.38)] transition-transform duration-300 hover:-translate-y-1 sm:p-6">
+      <div className={`absolute right-0 top-0 size-28 -translate-y-1/2 translate-x-1/2 rounded-full ${component.soft}`} aria-hidden />
+      <div className="relative flex items-start justify-between gap-4"><div className={`flex size-11 items-center justify-center rounded-2xl ${component.soft} ${component.text}`}><Icon className="size-5" strokeWidth={1.7} /></div><span className="font-mono text-xs tracking-[.18em] text-neutral-400">{component.number}</span></div>
+      <div className="relative mt-9 flex items-end justify-between gap-3"><h2 className="text-2xl font-black tracking-tight text-neutral-950">{component.name}</h2><span className={`font-mono text-2xl font-bold tracking-tighter ${component.text}`}>{component.weight}%</span></div>
+      <p className="relative mt-3 text-sm leading-relaxed text-neutral-600">{component.description}</p>
+      <div className="relative mt-5 border-t border-dashed border-neutral-200 pt-4 text-xs leading-relaxed text-neutral-500">{component.detail}</div>
+    </motion.article>
   )
 }
 
 //<---------- Metodologi ------------>
 export default function Metodologi() {
   return (
-    <div className="bg-neutral-50 px-4 py-10 sm:px-6 lg:py-14">
-      <main className="mx-auto max-w-5xl">
-        <p className="text-sm font-semibold tracking-wide text-blue-700">METODOLOGI ANTREAN</p>
-        <h1 className="mt-2 max-w-3xl text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-          Cara kami menentukan prioritas perbaikan
-        </h1>
-        <p className="mt-4 max-w-3xl text-base leading-relaxed text-neutral-600">
-          Setiap laporan diberi skor prioritas otomatis dari 0 sampai 100. Skor yang lebih tinggi akan tampil lebih
-          dahulu di antrean, agar alasan urutannya dapat dilihat dan dipahami bersama.
-        </p>
-
-        <section className="mt-10" aria-labelledby="komponen-skor">
-          <h2 id="komponen-skor" className="text-2xl font-bold text-neutral-900">Empat komponen skor</h2>
-          <RumusInteraktif />
-        </section>
-
-        <section className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6" aria-labelledby="batasan-sistem">
-          <div className="flex gap-3">
-            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden />
-            <div>
-              <h2 id="batasan-sistem" className="font-semibold text-amber-950">Batasan yang perlu diketahui</h2>
-              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-amber-900">
-                <li>Skor dihitung otomatis dari data laporan dan dukungan, bukan keputusan manual petugas.</li>
-                <li>Nilai terdampak serta lama menunggu dapat berubah ketika laporan aktif lain berubah.</li>
-                <li>Jalur vital memakai daftar kawasan konfigurasi, belum jarak presisi ke fasilitas atau jalan utama.</li>
-                <li>Skor membantu mengurutkan prioritas; penanganan lapangan tetap bergantung verifikasi dan kondisi darurat.</li>
-              </ul>
-            </div>
+    <div className="min-h-full bg-[#f6f5f1] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+      <main className="mx-auto max-w-6xl">
+        <section className="relative isolate overflow-hidden rounded-[2rem] border border-black/8 bg-white px-6 py-8 shadow-[0_12px_35px_-25px_rgba(0,0,0,.25)] sm:rounded-[2.5rem] sm:px-10 sm:py-12 lg:px-14 lg:py-16">
+          <DotField />
+          <div className="absolute -right-12 top-0 size-64 rounded-full border border-[#d9ff72] sm:size-80" aria-hidden />
+          <div className="absolute -right-4 top-8 size-40 rounded-full border border-neutral-200 sm:right-16" aria-hidden />
+          <div className="relative grid gap-10 lg:grid-cols-[1.3fr_.7fr] lg:items-end">
+            <div><p className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[.2em] text-neutral-500"><span className="size-1.5 rounded-full bg-[#13a87b]" /> Sistem prioritas v1.0</p><h1 className="mt-7 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.06em] text-neutral-950 sm:text-6xl lg:text-7xl">Setiap laporan<br /><span className="text-[#087b58]">punya alasan</span><br />untuk didahulukan.</h1><p className="mt-6 max-w-xl text-sm leading-relaxed text-neutral-600 sm:text-base">Antrean Kota menghitung skor prioritas dari 0 sampai 100. Bukan sekadar siapa yang datang duluan—tetapi laporan mana yang paling mendesak untuk kota.</p></div>
+            <div className="rounded-3xl border border-neutral-200 bg-[#f8f8f5] p-5 sm:p-6"><div className="flex items-center gap-4"><ScoreDonut /><div><span className="font-mono text-[10px] uppercase tracking-[.2em] text-neutral-500">Bobot total</span><CountUp to={TOTAL_WEIGHT} suffix="%" duration={1.2} className="mt-1 block text-4xl font-black tracking-tighter text-neutral-950" /><span className="text-xs text-neutral-500">empat faktor</span></div></div><div className="mt-5"><ScoreBar /></div><p className="mt-4 text-xs leading-relaxed text-neutral-500">Empat sinyal diolah secara konsisten untuk semua laporan aktif.</p></div>
           </div>
         </section>
 
-        <p className="mt-8 text-sm text-neutral-500">
-          Catatan pemeliharaan: angka bobot halaman ini mengikuti konfigurasi backend. Jika bobot backend berubah,
-          halaman ini harus diperbarui pada saat yang sama.
-        </p>
+        <section className="grid gap-4 py-7 sm:py-10 lg:grid-cols-[.78fr_1.22fr] lg:gap-10"><div className="lg:sticky lg:top-8 lg:h-fit"><p className="font-mono text-[10px] font-bold uppercase tracking-[.22em] text-neutral-500">01 / Mesin penilai</p><h2 className="mt-4 max-w-sm text-4xl font-black leading-[.95] tracking-[-.055em] text-neutral-950 sm:text-5xl">Empat sinyal.<br />Satu urutan yang terbuka.</h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-neutral-600">Bobotnya bersifat tetap. Nilai di dalam setiap faktor dapat berubah mengikuti kondisi laporan yang masih aktif.</p><div className="mt-7 hidden items-center gap-2 text-sm font-semibold text-neutral-900 lg:flex">Jelajahi faktor <ArrowDownRight className="size-4" /></div></div><div className="grid gap-4 sm:grid-cols-2">{SCORE_COMPONENTS.map((component) => <MethodCard key={component.name} component={component} />)}</div></section>
+
+        <section className="grid overflow-hidden rounded-[2rem] bg-[#d9ff72] sm:rounded-[2.5rem] lg:grid-cols-[1.05fr_.95fr]"><div className="p-6 sm:p-9 lg:p-12"><p className="font-mono text-[10px] font-bold uppercase tracking-[.22em] text-neutral-700">02 / Cara hitung</p><h2 className="mt-4 text-3xl font-black leading-none tracking-[-.05em] text-neutral-950 sm:text-5xl">Nilai yang bisa<br />ditelusuri.</h2><p className="mt-5 max-w-md text-sm leading-relaxed text-neutral-700">Setiap komponen dinilai pada skala 0–100, dikalikan dengan bobotnya, lalu dijumlahkan. Hasil akhir dibulatkan hingga dua angka desimal.</p></div><div className="m-3 rounded-[1.5rem] bg-[#171817] p-6 text-white sm:m-5 sm:p-9"><p className="font-mono text-[10px] uppercase tracking-[.22em] text-white/45">Rumus skor prioritas</p><div className="mt-6 space-y-3 font-mono text-sm leading-relaxed text-white/85 sm:text-base">{SCORE_COMPONENTS.map((component, index) => <div key={component.name} className="flex items-center gap-3"><span className={`size-2 rounded-full ${component.color}`} /><span>({component.name} × {component.weight}%)</span>{index < SCORE_COMPONENTS.length - 1 && <span className="ml-auto text-white/25">+</span>}</div>)}</div><div className="mt-7 border-t border-white/10 pt-5 text-2xl font-black tracking-tight">= skor 0—100</div></div></section>
+
+        <section className="mt-7 grid gap-5 rounded-[2rem] border border-[#e6d5ae] bg-[#fff9e9] p-6 sm:mt-10 sm:grid-cols-[auto_1fr] sm:p-9"><div className="flex size-11 items-center justify-center rounded-2xl bg-[#f6dfaa] text-[#8e5c00]"><AlertTriangle className="size-5" /></div><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.22em] text-[#8e5c00]">Batasan sistem</p><h2 className="mt-2 text-2xl font-black tracking-tight text-neutral-950">Transparan berarti juga menjelaskan batasannya.</h2><ul className="mt-5 grid gap-3 text-sm leading-relaxed text-neutral-700 sm:grid-cols-2"><li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#8e5c00]" />Skor otomatis, bukan keputusan manual petugas.</li><li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#8e5c00]" />Dampak dan waktu tunggu berubah saat laporan aktif berubah.</li><li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#8e5c00]" />Jalur vital memakai daftar kawasan konfigurasi, belum jarak presisi.</li><li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#8e5c00]" />Penanganan lapangan tetap bergantung pada verifikasi dan kondisi darurat.</li></ul></div></section>
+        <p className="px-2 py-8 text-xs leading-relaxed text-neutral-500 sm:py-10">Catatan pemeliharaan: angka bobot halaman ini mengikuti konfigurasi backend. Jika bobot backend berubah, halaman ini harus diperbarui pada saat yang sama.</p>
       </main>
     </div>
   )
