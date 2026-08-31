@@ -189,12 +189,17 @@ export default function DetailLaporan({ isOverlay = false }: DetailLaporanProps)
   if (!isOverlay) return content
 
   return (
-    <div className="fixed inset-0 z-[1000] flex justify-end bg-black/30 backdrop-blur-[1px] sm:p-4" role="presentation">
+    <div
+      className="fixed inset-0 z-[1000] flex justify-end bg-black/30 backdrop-blur-[1px] sm:p-4"
+      role="presentation"
+      onClick={() => navigate(-1)}
+    >
       <section
         role="dialog"
         aria-modal="true"
         aria-label="Detail laporan"
-        className="detail-overlay-panel font-display h-full w-full max-w-6xl overflow-y-auto bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+        className="detail-overlay-panel font-display h-full w-full max-w-6xl overflow-y-auto bg-white shadow-2xl sm:rounded-2xl"
       >
         {content}
       </section>

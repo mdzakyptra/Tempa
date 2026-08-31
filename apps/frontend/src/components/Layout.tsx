@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useMatch } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, FilePlus2, LayoutDashboard, LogIn, LogOut, Menu, PanelLeftOpen, Route, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FilePlus2, LayoutDashboard, LogIn, LogOut, Menu, PanelLeftOpen, Route } from 'lucide-react'
 import { QueueAssistant } from './queue-assistant'
 import { getCachedUserSnapshot, getCurrentUser, isPetugasPanelAllowed, logout, type DecodedUser } from '../lib/auth'
+import { QueueAssistantLiftProvider } from '../lib/queue-assistant-lift'
 
 
 const BASE_NAV_ITEMS = [
@@ -89,23 +90,14 @@ function Sidebar({ collapsed, onToggle, onNavigate, navItems, user, onLogout }: 
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isAssistantLifted, setIsAssistantLifted] = useState(false)
   const reportMatch = useMatch('/laporan/:id')
 
-  // Sama gate-nya kayak isi PanelPetugas.tsx — warga/guest gak usah lihat
-  // link ke halaman yang ujung-ujungnya bakal nolak mereka. Query key sama
-  // ('current-user'), jadi nyambung ke cache yang sama, bukan fetch baru.
-  // initialData dari snapshot sinkron (lib/auth) — nav kebaca bener dari
-  // render pertama abis refresh, gak nunggu /auth/refresh dulu (itu yang
-  // bikin link sempet blink).
   const queryClient = useQueryClient()
   const userQuery = useQuery({ queryKey: ['current-user'], queryFn: getCurrentUser, initialData: getCachedUserSnapshot })
   const navItems = BASE_NAV_ITEMS.filter((item) => item.to !== '/panel-petugas' || isPetugasPanelAllowed(userQuery.data))
 
   //<---------- handleLogout ------------>
-  // setQueryData langsung (bukan cuma invalidate) — semua halaman yang
-  // pakai queryKey ['current-user'] (PanelPetugas.tsx termasuk) langsung
-  // ke-render ulang sebagai guest di render berikutnya, bukan nunggu
-  // refetch network dulu.
   async function handleLogout() {
     await logout()
     queryClient.setQueryData(['current-user'], null)
@@ -121,14 +113,17 @@ export default function Layout() {
           <NavLink to="/"><img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7" /></NavLink>
           <button type="button" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-neutral-700 hover:bg-neutral-100" aria-label="Buka menu"><Menu className="size-5" /></button>
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto"><Outlet /></main>
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <QueueAssistantLiftProvider value={setIsAssistantLifted}>
+            <Outlet />
+          </QueueAssistantLiftProvider>
+        </main>
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[100] md:hidden">
+        <div className="fixed inset-0 z-[1000] md:hidden">
           <button type="button" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/30" aria-label="Tutup menu" />
           <div className="relative h-full w-72 bg-white shadow-2xl">
-            <button type="button" onClick={() => setMobileOpen(false)} className="absolute right-3 top-5 rounded-lg p-2 text-neutral-600 hover:bg-neutral-100" aria-label="Tutup menu"><X className="size-5" /></button>
             <Sidebar
               collapsed={false}
               onToggle={() => setMobileOpen(false)}
@@ -140,7 +135,7 @@ export default function Layout() {
           </div>
         </div>
       )}
-      <QueueAssistant reportId={reportMatch?.params.id} />
+      <QueueAssistant reportId={reportMatch?.params.id} lifted={isAssistantLifted} />
     </div>
   )
 }
