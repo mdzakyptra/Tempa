@@ -194,7 +194,7 @@ export default function DetailLaporan({ isOverlay = false }: DetailLaporanProps)
         role="dialog"
         aria-modal="true"
         aria-label="Detail laporan"
-        className="detail-overlay-panel h-full w-full max-w-6xl overflow-y-auto bg-white shadow-2xl"
+        className="detail-overlay-panel font-display h-full w-full max-w-6xl overflow-y-auto bg-white shadow-2xl"
       >
         {content}
       </section>

@@ -112,7 +112,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-neutral-50 text-black">
+    <div className="font-display flex h-dvh overflow-hidden bg-neutral-50 text-black">
       <div className="hidden h-full shrink-0 md:block">
         <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} navItems={navItems} user={userQuery.data} onLogout={handleLogout} />
       </div>
