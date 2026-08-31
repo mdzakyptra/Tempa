@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelBottomClose, PanelBottomOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { ALL_REPORTS_PATH, apiFetchPaginated } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
 import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
-import { CityMap, type CityMapMarker } from '../components/city-map'
+import type { CityMapMarker } from '../components/city-map'
 import { useSetQueueAssistantLifted } from '../lib/queue-assistant-lift'
 import ScrollReveal from '../components/landing/animations/ScrollReveal'
+
+const CityMap = lazy(() => import('../components/city-map/CityMap'))
 
 //<---------- CardSkeleton -------------->
 function CardSkeleton() {
@@ -108,14 +110,16 @@ export default function Antrean() {
       <main className="relative mx-auto h-[calc(100%-4.25rem)] max-w-[1600px] overflow-hidden rounded-3xl border border-black/10 bg-neutral-200 shadow-sm">
         {markers.length > 0 ? (
           <div className="absolute inset-0">
-            <CityMap
-              key={isHeatmap ? 'heatmap' : 'markers'}
-              markers={markers}
-              center={highlightedReport && highlightedReport.lat !== null && highlightedReport.lng !== null ? [highlightedReport.lat, highlightedReport.lng] : undefined}
-              zoom={highlightedReport ? 16 : isHeatmap ? 4 : 12}
-              heatmap={isHeatmap}
-              onMarkerClick={(marker) => navigateToReport(marker.id)}
-            />
+            <Suspense fallback={null}>
+              <CityMap
+                key={isHeatmap ? 'heatmap' : 'markers'}
+                markers={markers}
+                center={highlightedReport && highlightedReport.lat !== null && highlightedReport.lng !== null ? [highlightedReport.lat, highlightedReport.lng] : undefined}
+                zoom={highlightedReport ? 16 : isHeatmap ? 4 : 12}
+                heatmap={isHeatmap}
+                onMarkerClick={(marker) => navigateToReport(marker.id)}
+              />
+            </Suspense>
           </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 bg-neutral-50 text-neutral-400">

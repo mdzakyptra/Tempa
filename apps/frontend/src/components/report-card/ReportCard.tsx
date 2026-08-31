@@ -18,6 +18,7 @@ export interface ReportListItem {
   status: 'menunggu' | 'diproses' | 'selesai' | 'ditolak'
   dibuat_pada: string
   dibuat_oleh: string | null
+  foto_url: string | null
   skor: number
   skor_komponen: { bahaya: number; terdampak: number; lama_menunggu: number; jalur_vital: number }
 }
@@ -45,6 +46,8 @@ function skorBadgeStyle(skor: number) {
 
 //<---------- ReportCard -------------->
 export default function ReportCard({ report, index, onSelect }: ReportCardProps) {
+  const hasPhoto = Boolean(report.foto_url)
+
   return (
     <Link
       to={`/laporan/${report.id}`}
@@ -57,15 +60,21 @@ export default function ReportCard({ report, index, onSelect }: ReportCardProps)
           : undefined
       }
       className="group relative flex gap-4 overflow-hidden rounded-2xl border border-black/10 bg-white p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/20 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.25)] sm:p-6"
-    >
+      >
+      {hasPhoto && (
+        <div className="absolute inset-0" aria-hidden>
+          <img src={report.foto_url!} alt="" className="size-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_36%,rgba(255,255,255,0.45)_68%,rgba(255,255,255,0.9)_88%,#fff_100%)] backdrop-blur-[1px]" />
+        </div>
+      )}
       <span
         aria-hidden
-        className="hidden shrink-0 select-none font-mono text-4xl font-black leading-none tracking-tighter text-black/10 transition-colors duration-300 group-hover:text-black/20 sm:block"
+        className={cn('relative hidden shrink-0 select-none font-mono text-4xl font-black leading-none tracking-tighter transition-colors duration-300 sm:block', hasPhoto ? 'text-white drop-shadow-md group-hover:text-white' : 'text-black/10 group-hover:text-black/20')}
       >
         {String(index).padStart(2, '0')}
       </span>
 
-      <div className="min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="truncate text-lg font-bold tracking-tight text-neutral-900">{report.judul}</h3>
