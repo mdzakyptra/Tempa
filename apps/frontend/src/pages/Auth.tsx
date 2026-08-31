@@ -1,11 +1,11 @@
 import { lazy, Suspense, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowRight, ChevronLeft } from 'lucide-react'
 import { ApiError, apiFetch } from '../lib/api'
-import { storeTokens, type TokenPair } from '../lib/auth'
+import { cacheUserSnapshot, isPetugasPanelAllowed, storeTokens, type TokenPair } from '../lib/auth'
 
 
 const Dither = lazy(() => import('../components/Dither'))
@@ -46,6 +46,7 @@ function getErrorMessage(error: unknown, mode: AuthMode) {
   if (error instanceof ApiError) {
     if (error.statusCode === 401) return 'Email atau kata sandi tidak sesuai.'
     if (error.statusCode === 409) return 'Email ini sudah terdaftar. Silakan masuk.'
+    if (error.statusCode === 429) return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'
     if (error.statusCode === 0) return 'Server tidak dapat dihubungi. Coba lagi sebentar lagi.'
   }
 
@@ -55,6 +56,7 @@ function getErrorMessage(error: unknown, mode: AuthMode) {
 //<---------- Auth ------------>
 export default function Auth() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<AuthMode>('login')
   const [form, setForm] = useState<AuthFormValues>(INITIAL_FORM)
@@ -70,8 +72,28 @@ export default function Auth() {
     },
     onSuccess: (response) => {
       storeTokens(response)
-      const redirectPath = getRedirectPath(searchParams.get('redirect'))
-      navigate(redirectPath ?? (response.profile.peran === 'petugas' ? '/panel-petugas' : '/'))
+      const decodedUser = { sub: response.profile.id, email: response.profile.email, peran: response.profile.peran }
+      // 2 hal, bukan cuma 1: sessionStorage snapshot (buat render pertama abis
+      // full page refresh nanti) DAN setQueryData langsung ke cache
+      // react-query (buat SEKARANG, di sesi SPA ini). Kalau halaman ini
+      // ke-buka gara-gara ke-lempar dari /panel-petugas pas belum login,
+      // Layout.tsx udah sempat nge-cache 'current-user' = null duluan —
+      // cache lama itu nginjek initialData (initialData cuma kepake kalau
+      // BELUM ada entry sama sekali), jadi kalau cuma nulis snapshot doang,
+      // route tujuan abis login masih baca null itu dulu & mantul balik ke
+      // sini sebelum sempat refetch. setQueryData nimpa cache lama itu
+      // langsung, gak ada jendela race-nya.
+      cacheUserSnapshot(decodedUser)
+      queryClient.setQueryData(['current-user'], decodedUser)
+      // Kalau ?redirect= nunjuk ke /panel-petugas tapi user yang BARU login
+      // ini ternyata bukan petugas ter-allowlist (mis. warga yang ke-lempar
+      // ke sini dari link petugas, terus login pake akun sendiri), jangan
+      // dituruti buta — dia bakal cuma nampol "Akses ditolak". Redirect lain
+      // (bukan panel-petugas) tetap dihormati apa adanya.
+      const requestedRedirect = getRedirectPath(searchParams.get('redirect'))
+      const isAllowed = isPetugasPanelAllowed(decodedUser)
+      const redirectPath = requestedRedirect === '/panel-petugas' && !isAllowed ? null : requestedRedirect
+      navigate(redirectPath ?? (isAllowed ? '/panel-petugas' : '/'))
     },
   })
 
