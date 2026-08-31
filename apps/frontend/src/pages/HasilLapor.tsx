@@ -1,8 +1,11 @@
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ALL_REPORTS_PATH, apiFetch } from '../lib/api'
 import { JENIS_KERUSAKAN_LABEL } from '../lib/report-enums'
 import type { JenisKerusakan, TingkatBahaya } from '../lib/report-enums'
+
+const CityMap = lazy(() => import('../components/city-map/CityMap'))
 
 interface SkorKomponen {
   bahaya: number
@@ -27,6 +30,8 @@ interface ReportListItem {
   dibuat_oleh: string | null
   skor: number
   skor_komponen: SkorKomponen
+  lat: number | null
+  lng: number | null
 }
 
 // Bobot komponen skor (harus sinkron sama
@@ -63,6 +68,15 @@ function SkeletonHasil() {
 // kriteria konsistensi kepenuhi otomatis karena sumber datanya sama).
 export default function HasilLapor() {
   const { id } = useParams<{ id: string }>()
+
+  // Peta mulai zoom jauh (negara), abis mount lompat zoom deket ke lokasi
+  // laporan — CityMap udah punya flyTo animasi bawaan tiap center/zoom
+  // berubah, tinggal manfaatin dengan 2 state ini.
+  const [isRevealed, setIsRevealed] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setIsRevealed(true), 400)
+    return () => clearTimeout(timer)
+  }, [])
 
   // retry:false — 404 (laporan nggak ketemu/id salah) nggak akan pernah
   // berhasil diulang, defaultnya TanStack Query nyoba 3x dulu (delay makin
@@ -103,7 +117,23 @@ export default function HasilLapor() {
       <p className="text-sm font-medium text-emerald-700">Laporan kamu berhasil masuk antrean!</p>
       <h1 className="mt-1 text-xl font-semibold text-gray-900">{report.judul}</h1>
 
-      <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+      {report.lat !== null && report.lng !== null && (
+        <div className="mt-6 h-[280px] w-full overflow-hidden rounded-lg border border-gray-200">
+          <Suspense fallback={<div className="h-full w-full animate-pulse bg-gray-100" />}>
+            <CityMap
+              markers={[{ id: report.id, lat: report.lat, lng: report.lng, label: report.judul }]}
+              center={[report.lat, report.lng]}
+              zoom={isRevealed ? 16 : 3}
+              mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
+              autoRotate
+              pulseMarkers
+              hideAttribution
+            />
+          </Suspense>
+        </div>
+      )}
+
+      <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-center">
         {position >= 0 ? (
           <>
             <p className="text-3xl font-bold text-gray-900">
