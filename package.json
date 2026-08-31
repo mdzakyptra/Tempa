@@ -15,6 +15,7 @@
     "esbuild@0.28.2": true
   },
   "dependencies": {
-    "ogl": "^1.0.11"
+    "ogl": "^1.0.11",
+    "tree": "^0.1.3"
   }
 }

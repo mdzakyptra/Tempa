@@ -68,6 +68,37 @@ export async function getValidAccessToken() {
   return accessToken ?? refreshAccessToken()
 }
 
+// Mirror apps/backend/src/auth/interfaces/jwt-payload.interface.ts
+export interface DecodedUser {
+  sub: string
+  email: string
+  peran: 'warga' | 'petugas'
+}
+
+//<---------- decodeJwtPayload ------------>
+// Baca payload JWT tanpa verifikasi signature — cukup buat gating UI
+// (tau siapa yang login), BUKAN buat keputusan keamanan (itu tugas
+// backend, yang beneran verifikasi signature-nya lewat JwtAuthGuard).
+function decodeJwtPayload(token: string): DecodedUser | null {
+  try {
+    const payload = token.split('.')[1]
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(base64)) as DecodedUser
+  } catch {
+    return null
+  }
+}
+
+//<---------- getCurrentUser ------------>
+// JEK-44 — belum ada endpoint /auth/me di backend, tapi JWT payload udah
+// bawa email+peran sendiri, jadi cukup ambil access token yang valid
+// (nyoba refresh dulu kalau kosong di memori — getValidAccessToken sudah
+// nangani itu) lalu decode.
+export async function getCurrentUser(): Promise<DecodedUser | null> {
+  const token = await getValidAccessToken()
+  return token ? decodeJwtPayload(token) : null
+}
+
 //<---------- logout ------------>
 export async function logout() {
   const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)

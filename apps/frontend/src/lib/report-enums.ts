@@ -11,6 +11,8 @@ export type JenisKerusakan =
 
 export type TingkatBahaya = 'rendah' | 'sedang' | 'tinggi' | 'darurat'
 
+export type StatusLaporan = 'menunggu' | 'diproses' | 'selesai' | 'ditolak'
+
 export const JENIS_KERUSAKAN_LABEL: Record<JenisKerusakan, string> = {
   jalan: 'Jalan',
   trotoar: 'Trotoar',
@@ -28,5 +30,13 @@ export const TINGKAT_BAHAYA_LABEL: Record<TingkatBahaya, string> = {
   darurat: 'Darurat',
 }
 
+export const STATUS_LAPORAN_LABEL: Record<StatusLaporan, string> = {
+  menunggu: 'Menunggu',
+  diproses: 'Diproses',
+  selesai: 'Selesai',
+  ditolak: 'Ditolak',
+}
+
 export const JENIS_KERUSAKAN_OPTIONS = Object.keys(JENIS_KERUSAKAN_LABEL) as JenisKerusakan[]
 export const TINGKAT_BAHAYA_OPTIONS = Object.keys(TINGKAT_BAHAYA_LABEL) as TingkatBahaya[]
+export const STATUS_LAPORAN_OPTIONS = Object.keys(STATUS_LAPORAN_LABEL) as StatusLaporan[]
