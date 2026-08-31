@@ -2,7 +2,7 @@ import { useRef, type ReactNode } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Earth } from "./Earth";
-import { Markers } from "./Markers";
+import { Markers, type ScreenAnchor } from "./Markers";
 import { LOCK_ROTATION_Y } from "./constants";
 import { beatRange } from "./beats";
 
@@ -34,7 +34,15 @@ function RotatingRig({ progressRef, children }: { progressRef: React.RefObject<n
 }
 
 //<---------- GlobeStoryScene -------------->
-export default function GlobeStoryScene({ progressRef, className }: { progressRef: React.RefObject<number>; className?: string }) {
+export default function GlobeStoryScene({
+  progressRef,
+  className,
+  screenAnchor,
+}: {
+  progressRef: React.RefObject<number>;
+  className?: string;
+  screenAnchor?: ScreenAnchor;
+}) {
   return (
     <div className={`pointer-events-none absolute inset-0 ${className ?? ""}`} aria-hidden>
       <Canvas dpr={[1, 1.75]} gl={{ antialias: true, alpha: true }} camera={{ fov: 45, position: [0, 0.2, 8] }}>
@@ -43,7 +51,7 @@ export default function GlobeStoryScene({ progressRef, className }: { progressRe
         <hemisphereLight args={["#bfe3ff", "#08182a", 0.4]} />
         <RotatingRig progressRef={progressRef}>
           <Earth />
-          <Markers progressRef={progressRef} />
+          <Markers progressRef={progressRef} screenAnchor={screenAnchor} />
         </RotatingRig>
       </Canvas>
     </div>
