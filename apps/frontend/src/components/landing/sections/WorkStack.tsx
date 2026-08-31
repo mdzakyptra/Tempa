@@ -32,8 +32,16 @@ const projects = [
 //<---------- WorkStack -------------->
 export default function WorkStack() {
   return (
-    <section id="work" className="relative px-6 py-28">
-      <div className="mx-auto mb-16 max-w-4xl text-center">
+    <section
+      id="work"
+      className="relative z-10 bg-white px-6 py-28 md:-mt-[105vh]"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-[35vh] hidden h-[35vh] bg-gradient-to-b from-transparent to-white md:block"
+      />
+
+      <div className="relative mx-auto mb-16 max-w-4xl text-center md:rounded-3xl md:border md:border-black/10 md:bg-white/85 md:p-8 md:backdrop-blur-md">
         <ScrollReveal>
           <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">
             Yang bisa kamu lakukan

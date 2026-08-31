@@ -79,6 +79,8 @@ export default function HeroScrollStack() {
   });
 
   const progressRef = useRef(0);
+  const markerX = useMotionValue(50);
+  const markerY = useMotionValue(50);
   const [introVisible, setIntroVisible] = useState(true);
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     progressRef.current = v;
@@ -115,7 +117,7 @@ export default function HeroScrollStack() {
         className="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden px-6"
       >
         <motion.div style={{ x: globeX }} className="absolute inset-0">
-          <GlobeStoryScene progressRef={progressRef} />
+          <GlobeStoryScene progressRef={progressRef} screenAnchor={{ x: markerX, y: markerY }} />
         </motion.div>
 
         <Corner className="left-6 top-24 md:left-10" />
@@ -130,15 +132,7 @@ export default function HeroScrollStack() {
             style={{ opacity: introOpacity, scale: introScale }}
             className="pointer-events-none absolute inset-x-0 top-16 z-10 flex origin-top flex-col items-center px-6 text-center md:inset-x-auto md:inset-y-0 md:right-6 md:top-0 md:w-full md:max-w-2xl md:origin-right md:items-end md:justify-center md:px-0 md:text-right lg:right-16 lg:max-w-3xl"
           >
-            <motion.span
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/20 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-neutral-700"
-            >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black" />
-              <TextScramble text="Transparansi aspirasi kota" />
-            </motion.span>
+            
 
             <motion.h1
               style={{ x: headX, y: headY }}

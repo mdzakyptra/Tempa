@@ -1,8 +1,11 @@
 import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import type { MotionValue } from "motion/react";
 import { latLngToVector3, RADIUS } from "./constants";
 import { MARKER, VOTE_OFFSETS, beatRange, beatLocalProgress } from "./beats";
+
+export type ScreenAnchor = { x: MotionValue<number>; y: MotionValue<number> };
 
 
 //<---------- useDotTexture -------------->
@@ -50,11 +53,23 @@ const RADAR_RING_COUNT = 3;
 const RADAR_PERIOD = 1.8;
 
 //<---------- MainMarker -------------->
-function MainMarker({ progressRef, texture, ringTexture }: { progressRef: React.RefObject<number>; texture: THREE.Texture; ringTexture: THREE.Texture }) {
+function MainMarker({
+  progressRef,
+  texture,
+  ringTexture,
+  screenAnchor,
+}: {
+  progressRef: React.RefObject<number>;
+  texture: THREE.Texture;
+  ringTexture: THREE.Texture;
+  screenAnchor?: ScreenAnchor;
+}) {
   const position = useMemo(() => latLngToVector3(MARKER.lat, MARKER.lng, RADIUS * 1.012), []);
   const dotRef = useRef<THREE.Sprite>(null);
   const ringRefs = useRef<(THREE.Sprite | null)[]>([]);
   const [beat1Start] = beatRange(0);
+  const { camera } = useThree();
+  const worldPos = useRef(new THREE.Vector3());
 
   useFrame((state) => {
     const progress = progressRef.current ?? 0;
@@ -64,6 +79,13 @@ function MainMarker({ progressRef, texture, ringTexture }: { progressRef: React.
     if (dotRef.current) {
       const dotPulse = (Math.sin(state.clock.elapsedTime * 3) + 1) / 2;
       dotRef.current.scale.setScalar((0.2 + dotPulse * 0.04) * reveal);
+
+      if (screenAnchor) {
+        dotRef.current.getWorldPosition(worldPos.current);
+        worldPos.current.project(camera);
+        screenAnchor.x.set((worldPos.current.x * 0.5 + 0.5) * 100);
+        screenAnchor.y.set((1 - (worldPos.current.y * 0.5 + 0.5)) * 100);
+      }
     }
     ringRefs.current.forEach((sprite, i) => {
       if (!sprite) return;
@@ -119,57 +141,20 @@ function VoteDots({ progressRef, texture }: { progressRef: React.RefObject<numbe
   );
 }
 
-//<---------- AiLink -------------->
-function AiLink({ progressRef, texture }: { progressRef: React.RefObject<number>; texture: THREE.Texture }) {
-  const markerPos = useMemo(() => latLngToVector3(MARKER.lat, MARKER.lng, RADIUS * 1.012), []);
-  const nodePos = useMemo(() => latLngToVector3(MARKER.lat, MARKER.lng, RADIUS * 1.55), []);
-  const nodeRef = useRef<THREE.Sprite>(null);
-
-  const line = useMemo(() => {
-    const geometry = new THREE.BufferGeometry().setFromPoints([markerPos, nodePos]);
-    const material = new THREE.LineDashedMaterial({
-      color: "#5ee7ff",
-      transparent: true,
-      opacity: 0,
-      dashSize: 0.06,
-      gapSize: 0.04,
-    });
-    const object = new THREE.Line(geometry, material);
-    object.computeLineDistances();
-    return object;
-  }, [markerPos, nodePos]);
-
-  useFrame(() => {
-    const progress = progressRef.current ?? 0;
-    const local = beatLocalProgress(progress, 3);
-    const reveal = THREE.MathUtils.smoothstep(local, 0.05, 0.4);
-    if (nodeRef.current) {
-      nodeRef.current.scale.setScalar(0.26 * reveal);
-      (nodeRef.current.material as THREE.SpriteMaterial).opacity = reveal;
-    }
-    const material = line.material as THREE.LineDashedMaterial;
-    material.opacity = reveal * 0.7;
-  });
-
-  return (
-    <>
-      <primitive object={line} />
-      <sprite ref={nodeRef} position={nodePos}>
-        <spriteMaterial map={texture} color="#5ee7ff" transparent depthWrite={false} opacity={0} />
-      </sprite>
-    </>
-  );
-}
-
 //<---------- Markers -------------->
-export function Markers({ progressRef }: { progressRef: React.RefObject<number> }) {
+export function Markers({
+  progressRef,
+  screenAnchor,
+}: {
+  progressRef: React.RefObject<number>;
+  screenAnchor?: ScreenAnchor;
+}) {
   const texture = useDotTexture();
   const ringTexture = useRingTexture();
   return (
     <>
-      <MainMarker progressRef={progressRef} texture={texture} ringTexture={ringTexture} />
+      <MainMarker progressRef={progressRef} texture={texture} ringTexture={ringTexture} screenAnchor={screenAnchor} />
       <VoteDots progressRef={progressRef} texture={texture} />
-      <AiLink progressRef={progressRef} texture={texture} />
     </>
   );
 }

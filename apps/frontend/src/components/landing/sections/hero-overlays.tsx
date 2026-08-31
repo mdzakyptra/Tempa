@@ -1,5 +1,5 @@
-import { motion, useMotionValueEvent, useTransform, type MotionValue } from "motion/react";
-import { useState } from "react";
+import { animate, motion, useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from "motion/react";
+import { useRef, useState } from "react";
 import { BEATS, MARKER, beatRange, beatLocalProgress } from "../backgrounds/globe-story/beats";
 
 const SCORE_WEIGHTS = [
@@ -56,30 +56,35 @@ export function StepRail({ progress }: { progress: MotionValue<number> }) {
   );
 }
 
-//<---------- ScoreBar -------------->
-function ScoreBar({ progress, index }: { progress: MotionValue<number>; index: number }) {
-  const item = SCORE_WEIGHTS[index];
-  const local = useTransform(progress, (v) => beatLocalProgress(v, 1));
-  const start = index * 0.18;
-  const fill = useTransform(local, [start, start + 0.35], [0, item.weight]);
-  const width = useTransform(fill, (v) => `${(v / 35) * 100}%`);
+//<---------- ScoreCard -------------->
+function ScoreItem({ label, weight, progress }: { label: string; weight: number; progress: MotionValue<number> }) {
+  const [start, end] = beatRange(1);
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (v) => Math.round(v));
+  const hasAnimated = useRef(false);
+
+  useMotionValueEvent(progress, "change", (v) => {
+    if (v >= start && v < end) {
+      if (!hasAnimated.current) {
+        hasAnimated.current = true;
+        animate(count, weight, { duration: 1, ease: "easeOut" });
+      }
+    } else if (v < start) {
+      hasAnimated.current = false;
+      count.set(0);
+    }
+  });
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-28 shrink-0 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
-        {item.label}
-      </span>
-      <div className="h-1.5 flex-1 rounded-full bg-black/10">
-        <motion.div style={{ width }} className="h-full rounded-full bg-black" />
-      </div>
-      <motion.span className="w-8 shrink-0 text-right font-mono text-[10px] tabular-nums text-neutral-500">
-        {item.weight}%
-      </motion.span>
+    <div>
+      <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">{label}</p>
+      <p className="mt-1 text-5xl font-black tracking-tighter md:text-6xl">
+        <motion.span>{rounded}</motion.span>%
+      </p>
     </div>
   );
 }
 
-//<---------- ScoreCard -------------->
 export function ScoreCard({ progress }: { progress: MotionValue<number> }) {
   const [start, end] = beatRange(1);
   const opacity = useTransform(progress, [start, start + 0.05, end - 0.05, end], [0, 1, 1, 0]);
@@ -87,16 +92,11 @@ export function ScoreCard({ progress }: { progress: MotionValue<number> }) {
   return (
     <motion.div
       style={{ opacity }}
-      className="pointer-events-none absolute bottom-10 right-6 z-10 hidden w-72 rounded-2xl border border-black/10 bg-white/80 p-5 backdrop-blur-md sm:block md:right-12"
+      className="pointer-events-none absolute right-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-8 sm:flex md:right-14 lg:right-20"
     >
-      <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-        Rincian skor terbuka
-      </p>
-      <div className="flex flex-col gap-3">
-        {SCORE_WEIGHTS.map((_, i) => (
-          <ScoreBar key={i} progress={progress} index={i} />
-        ))}
-      </div>
+      {SCORE_WEIGHTS.map((item) => (
+        <ScoreItem key={item.label} label={item.label} weight={item.weight} progress={progress} />
+      ))}
     </motion.div>
   );
 }
