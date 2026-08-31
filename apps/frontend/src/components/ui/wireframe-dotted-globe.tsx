@@ -118,6 +118,13 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
         const data = landDataRef.current
         if (!data) return
 
+        // Bola laut — proyeksi orthographic selalu tampil bulat sepanjang
+        // scale() (radius layar dalam px), isi warna sebelum gambar apa-apa.
+        context.beginPath()
+        context.arc(width / 2, height / 2, projection.scale(), 0, 2 * Math.PI)
+        context.fillStyle = '#bfdbfe'
+        context.fill()
+
         context.beginPath()
         path(d3.geoGraticule()())
         context.strokeStyle = '#a1a1aa'
@@ -137,7 +144,7 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
           if (projected && projected[0] >= 0 && projected[0] <= width && projected[1] >= 0 && projected[1] <= height) {
             context.beginPath()
             context.arc(projected[0], projected[1], 1 * scaleFactor, 0, 2 * Math.PI)
-            context.fillStyle = '#52525b'
+            context.fillStyle = '#16a34a'
             context.fill()
           }
         })
