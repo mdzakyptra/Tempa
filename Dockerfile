@@ -32,4 +32,4 @@ COPY --from=build /app/apps/backend/dist apps/backend/dist
 COPY --from=build /app/apps/backend/generated apps/backend/generated
 
 EXPOSE 3000
-CMD ["node", "apps/backend/dist/main"]
+CMD ["node", "apps/backend/dist/src/main"]
