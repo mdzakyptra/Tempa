@@ -13,7 +13,6 @@ import { BEATS, beatRange } from "../backgrounds/globe-story/beats";
 import { StepRail, ScoreCard, VoteCounter } from "./hero-overlays";
 import SplitText from "../animations/SplitText";
 import FlipWords from "../animations/FlipWords";
-import TextScramble from "../animations/TextScramble";
 import MagneticButton from "../animations/MagneticButton";
 
 
