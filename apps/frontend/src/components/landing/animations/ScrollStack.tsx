@@ -45,11 +45,13 @@ function Card({
   index,
   total,
   progress,
+  coverStyle = "dim",
 }: {
   child: ReactNode;
   index: number;
   total: number;
   progress: MotionValue<number>;
+  coverStyle?: "dim" | "slideAway";
 }) {
   const start = index / total;
   const end = (index + 1) / total;
@@ -57,23 +59,38 @@ function Card({
   // deal direction alternates per card
   const side = index % 2 === 0 ? 1 : -1;
 
-  // deal-in: approach from an alternating side with a tilt, land straight
+  const slideAway = coverStyle === "slideAway";
+
+  // deal-in, "dim" (WorkStack default): approach from an alternating side
+  // with a tilt, land straight.
+  //
+  // deal-in, "slideAway": straight vertical slide up into place — no
+  // sideways travel, no tilt at all ("lurus", not "miring").
   const enterStart = start - 0.6 / total;
-  const enterX = useTransform(progress, [enterStart, start], [side * 110, 0]);
-  const enterRot = useTransform(progress, [enterStart, start], [side * 6, 0]);
+  const enterX = useTransform(progress, [enterStart, start], slideAway ? [0, 0] : [side * 110, 0]);
+  const enterY = useTransform(progress, [enterStart, start], slideAway ? [120, 0] : [0, 0]);
+  const enterRot = useTransform(progress, [enterStart, start], slideAway ? [0, 0] : [side * 6, 0]);
 
-  // covered: settle into the pile — shrink a touch, dim, fan out
-  const scale = useTransform(progress, [start, end], [1, 0.94]);
-  const y = useTransform(progress, [start, end], [0, -12]);
-  const coverRot = useTransform(progress, [start, end], [0, side * -2.5]);
-  const rotateX = useTransform(progress, [start, end], [0, 5]);
+  // covered, "dim": settle into the pile — shrink a touch, dim, fan out,
+  // but stays basically in place (good for a lightweight placeholder
+  // behind it, like WorkStack's ghost-number box).
+  //
+  // covered, "slideAway": for content-heavy cards (real text on both
+  // sides, like Metodologi) — the "dim" recipe barely moves the covered
+  // card, so its still-legible text visually collides with the incoming
+  // card's text. This one slides the covered card straight up (no tilt)
+  // clear of the viewport and fades it out, so there's never two texts
+  // fighting for the same spot.
+  const scale = useTransform(progress, [start, end], slideAway ? [1, 1] : [1, 0.94]);
+  const coverY = useTransform(progress, [start, end], slideAway ? [0, -220] : [0, -12]);
+  const coverRot = useTransform(progress, [start, end], slideAway ? [0, 0] : [0, side * -2.5]);
+  const rotateX = useTransform(progress, [start, end], slideAway ? [0, 0] : [0, 5]);
   const brightness = useTransform(progress, [start, end], [1, 0.45]);
-  const filter = useTransform(brightness, (br) => `brightness(${br})`);
+  const filter = useTransform(brightness, (br) => (slideAway ? "none" : `brightness(${br})`));
+  const opacity = useTransform(progress, [start, end], slideAway ? [1, 0] : [1, 1]);
 
-  const rotate = useTransform(
-    [enterRot, coverRot],
-    ([a, b]: number[]) => a + b
-  );
+  const rotate = useTransform([enterRot, coverRot], ([a, b]: number[]) => a + b);
+  const y = useTransform([enterY, coverY], ([a, b]: number[]) => a + b);
 
   // ambient glow ring: peaks while this card is the active (topmost) one
   const glowPad = 1 / total / 2;
@@ -110,6 +127,7 @@ function Card({
           y: isLast ? 0 : y,
           rotateX: isLast ? 0 : rotateX,
           filter: isLast ? "none" : filter,
+          opacity: isLast ? 1 : opacity,
           boxShadow,
           transformOrigin: "center top",
           transformStyle: "preserve-3d",
@@ -223,9 +241,12 @@ function ProgressRail({
 export default function ScrollStack({
   children,
   className = "",
+  coverStyle = "dim",
 }: {
   children: ReactNode;
   className?: string;
+  /** "dim" (default, original WorkStack look) or "slideAway" — see Card for why. */
+  coverStyle?: "dim" | "slideAway";
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -248,6 +269,7 @@ export default function ScrollStack({
             index={i}
             total={total}
             progress={scrollYProgress}
+            coverStyle={coverStyle}
           />
         ))}
       </div>

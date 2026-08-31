@@ -5,7 +5,6 @@ import { apiFetch, ApiError } from '../lib/api'
 import { StatusTimeline } from '../components/status-timeline'
 import { ScoreBreakdown } from '../components/score-breakdown'
 import { CityMap } from '../components/city-map'
-import { QueueAssistant } from '../components/queue-assistant'
 import { VoteButton } from '../components/vote-button'
 import type { ReportListItem } from '../components/report-card'
 import NotFound from './NotFound'
@@ -184,19 +183,23 @@ export default function DetailLaporan({ isOverlay = false }: DetailLaporanProps)
       <div className="mt-4">
         <StatusTimeline reportId={id} />
       </div>
-      <QueueAssistant reportId={id} />
     </div>
   )
 
   if (!isOverlay) return content
 
   return (
-    <div className="fixed inset-0 z-[1000] flex justify-end bg-black/30 backdrop-blur-[1px] sm:p-4" role="presentation">
+    <div
+      className="fixed inset-0 z-[1000] flex justify-end bg-black/30 backdrop-blur-[1px] sm:p-4"
+      role="presentation"
+      onClick={() => navigate(-1)}
+    >
       <section
         role="dialog"
         aria-modal="true"
         aria-label="Detail laporan"
-        className="detail-overlay-panel h-full w-full max-w-6xl overflow-y-auto bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+        className="detail-overlay-panel font-display h-full w-full max-w-6xl overflow-y-auto bg-white shadow-2xl sm:rounded-2xl"
       >
         {content}
       </section>

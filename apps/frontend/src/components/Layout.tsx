@@ -1,94 +1,141 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { useState } from 'react'
+import { NavLink, Outlet, useMatch } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight, FilePlus2, LayoutDashboard, LogIn, LogOut, Menu, PanelLeftOpen, Route } from 'lucide-react'
+import { QueueAssistant } from './queue-assistant'
+import { getCachedUserSnapshot, getCurrentUser, isPetugasPanelAllowed, logout, type DecodedUser } from '../lib/auth'
+import { QueueAssistantLiftProvider } from '../lib/queue-assistant-lift'
 
 
-const navItems = [
-  { to: '/antrean', label: 'Antrean' },
-  { to: '/metodologi', label: 'Metodologi' },
-  { to: '/panel-petugas', label: 'Panel Petugas' },
+const BASE_NAV_ITEMS = [
+  { to: '/antrean', label: 'Antrean', icon: LayoutDashboard },
+  { to: '/metodologi', label: 'Metodologi', icon: Route },
+  { to: '/panel-petugas', label: 'Panel Petugas', icon: PanelLeftOpen },
 ]
 
-//<---------- Layout -------------->
+interface SidebarProps {
+  collapsed: boolean
+  onToggle: () => void
+  onNavigate?: () => void
+  navItems: typeof BASE_NAV_ITEMS
+  user: DecodedUser | null
+  onLogout: () => void
+}
+
+//<---------- Sidebar ------------>
+function Sidebar({ collapsed, onToggle, onNavigate, navItems, user, onLogout }: SidebarProps) {
+  return (
+    <aside className={`flex h-full flex-col border-r border-black/10 bg-white transition-[width] duration-300 ${collapsed ? 'w-[76px]' : 'w-64'}`}>
+      <div className="flex h-20 items-center border-b border-black/10 px-4">
+        <NavLink to="/" onClick={onNavigate} className="min-w-0 flex-1 overflow-hidden">
+          <img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7 w-auto max-w-none" />
+        </NavLink>
+        <button type="button" onClick={onToggle} className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-black" aria-label={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}>
+          {collapsed ? <ChevronRight className="size-5" /> : <ChevronLeft className="size-5" />}
+        </button>
+      </div>
+
+      <nav className="flex-1 space-y-1 p-3" aria-label="Navigasi utama">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} onClick={onNavigate} title={collapsed ? label : undefined} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${isActive ? 'bg-black text-white shadow-lg shadow-black/10' : 'text-neutral-600 hover:bg-neutral-100 hover:text-black'}`}>
+            <Icon className="size-5 shrink-0" />
+            {!collapsed && <span>{label}</span>}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="space-y-2 border-t border-black/10 p-3">
+        <NavLink to="/lapor-baru" onClick={onNavigate} title={collapsed ? 'Tambah laporan' : undefined} className="flex items-center gap-3 rounded-xl bg-black px-3 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800">
+          <FilePlus2 className="size-5 shrink-0" />
+          {!collapsed && <span>Tambah laporan</span>}
+        </NavLink>
+        {user ? (
+          <>
+            <div className={`flex items-center gap-3 rounded-xl px-3 py-2 ${collapsed ? 'justify-center' : ''}`} title={collapsed ? `${user.email} · ${user.peran}` : undefined}>
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white uppercase">
+                {user.email.charAt(0)}
+              </span>
+              {!collapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-neutral-900">{user.email}</p>
+                  <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">{user.peran}</p>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onLogout()
+                onNavigate?.()
+              }}
+              title={collapsed ? 'Keluar' : undefined}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black"
+            >
+              <LogOut className="size-5 shrink-0" />
+              {!collapsed && <span>Keluar</span>}
+            </button>
+          </>
+        ) : (
+          <NavLink to="/auth" onClick={onNavigate} title={collapsed ? 'Masuk' : undefined} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-black">
+            <LogIn className="size-5 shrink-0" />
+            {!collapsed && <span>Masuk</span>}
+          </NavLink>
+        )}
+      </div>
+    </aside>
+  )
+}
+
+//<---------- Layout ------------>
 export default function Layout() {
-  const [hidden, setHidden] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [isAssistantLifted, setIsAssistantLifted] = useState(false)
+  const reportMatch = useMatch('/laporan/:id')
 
-  useEffect(() => {
-    let lastY = window.scrollY
+  const queryClient = useQueryClient()
+  const userQuery = useQuery({ queryKey: ['current-user'], queryFn: getCurrentUser, initialData: getCachedUserSnapshot })
+  const navItems = BASE_NAV_ITEMS.filter((item) => item.to !== '/panel-petugas' || isPetugasPanelAllowed(userQuery.data))
 
-    function onScroll() {
-      const y = window.scrollY
-      const delta = y - lastY
-
-      if (y < 40) {
-        setHidden(false)
-      } else if (delta > 0) {
-        setHidden(true)
-      } else if (delta < 0) {
-        setHidden(false)
-      }
-
-      lastY = y
-    }
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  //<---------- handleLogout ------------>
+  async function handleLogout() {
+    await logout()
+    queryClient.setQueryData(['current-user'], null)
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-black">
-      <motion.header
-        animate={{ y: hidden ? -96 : 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="sticky top-0 z-50 border-b border-black/10 bg-white/80 backdrop-blur-xl"
-      >
-        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
-          <NavLink to="/" className="shrink-0">
-            <img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7 w-auto" />
-          </NavLink>
+    <div className="font-display flex h-dvh overflow-hidden bg-neutral-50 text-black">
+      <div className="hidden h-full shrink-0 md:block">
+        <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} navItems={navItems} user={userQuery.data} onLogout={handleLogout} />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-black/10 bg-white px-4 md:hidden">
+          <NavLink to="/"><img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7" /></NavLink>
+          <button type="button" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-neutral-700 hover:bg-neutral-100" aria-label="Buka menu"><Menu className="size-5" /></button>
+        </header>
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <QueueAssistantLiftProvider value={setIsAssistantLifted}>
+            <Outlet />
+          </QueueAssistantLiftProvider>
+        </main>
+      </div>
 
-          <ul className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-2">
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `group relative text-sm transition-colors ${isActive ? 'font-semibold text-black' : 'text-neutral-600 hover:text-black'}`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {item.label}
-                      <span
-                        className={`absolute -bottom-1 left-0 h-px bg-black transition-all duration-300 ${
-                          isActive ? 'w-full' : 'w-0 group-hover:w-full'
-                        }`}
-                      />
-                    </>
-                  )}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <NavLink
-              to="/lapor-baru"
-              className="rounded-full border border-black/15 px-5 py-2 text-sm font-semibold text-black transition-colors hover:border-black/40 hover:bg-black/5"
-            >
-              Tambah Laporan
-            </NavLink>
-            <NavLink
-              to="/auth"
-              className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition-transform hover:scale-105"
-            >
-              Masuk
-            </NavLink>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[1000] md:hidden">
+          <button type="button" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/30" aria-label="Tutup menu" />
+          <div className="relative h-full w-72 bg-white shadow-2xl">
+            <Sidebar
+              collapsed={false}
+              onToggle={() => setMobileOpen(false)}
+              onNavigate={() => setMobileOpen(false)}
+              navItems={navItems}
+              user={userQuery.data}
+              onLogout={handleLogout}
+            />
           </div>
-        </nav>
-      </motion.header>
-      <main className="flex-1">
-        <Outlet />
-      </main>
+        </div>
+      )}
+      <QueueAssistant reportId={reportMatch?.params.id} lifted={isAssistantLifted} />
     </div>
   )
 }

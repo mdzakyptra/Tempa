@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Bot, LoaderCircle, MessageCircle, Send, X } from 'lucide-react'
 import { ApiError, apiFetch } from '../../lib/api'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 
 
 interface ChatMessage {
@@ -12,6 +14,7 @@ interface ChatMessage {
 
 interface QueueAssistantProps {
   reportId?: string
+  lifted?: boolean
 }
 
 const INITIAL_MESSAGE: ChatMessage = {
@@ -21,13 +24,14 @@ const INITIAL_MESSAGE: ChatMessage = {
 }
 
 //<---------- QueueAssistant ------------>
-export default function QueueAssistant({ reportId }: QueueAssistantProps) {
+export default function QueueAssistant({ reportId, lifted = false }: QueueAssistantProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [question, setQuestion] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE])
   const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const messageEndRef = useRef<HTMLDivElement>(null)
+  const isDesktop = useMediaQuery('(min-width: 640px)')
 
   useEffect(() => {
     if (isOpen) inputRef.current?.focus()
@@ -78,12 +82,18 @@ export default function QueueAssistant({ reportId }: QueueAssistantProps) {
   }
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 sm:right-6 sm:bottom-6">
-      {isOpen && (
-        <section
-          aria-label="Asisten Aspiraku"
-          className="mb-3 flex h-[min(32rem,calc(100dvh-7rem))] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl"
-        >
+    <div className="pointer-events-none fixed inset-0 z-[600] sm:inset-auto sm:right-6 sm:bottom-6 sm:flex sm:flex-col sm:items-end">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.section
+            key="chat"
+            aria-label="Asisten Aspiraku"
+            initial={isDesktop ? { opacity: 0, scale: 0.95, y: 8 } : { y: '100%' }}
+            animate={isDesktop ? { opacity: 1, scale: 1, y: 0 } : { y: 0 }}
+            exit={isDesktop ? { opacity: 0, scale: 0.95, y: 8 } : { y: '100%' }}
+            transition={{ duration: isDesktop ? 0.2 : 0.35, ease: [0.76, 0, 0.24, 1] }}
+            className="pointer-events-auto absolute inset-0 flex flex-col overflow-hidden bg-white sm:static sm:mb-3 sm:h-[min(32rem,calc(100dvh-7rem))] sm:w-[calc(100vw-2rem)] sm:max-w-sm sm:rounded-2xl sm:border sm:border-neutral-200 sm:shadow-2xl sm:origin-bottom-right"
+          >
           <header className="flex items-start justify-between gap-3 border-b border-neutral-100 bg-neutral-900 px-4 py-3 text-white">
             <div className="flex gap-2.5">
               <Bot className="mt-0.5 size-5 shrink-0" aria-hidden />
@@ -152,13 +162,16 @@ export default function QueueAssistant({ reportId }: QueueAssistantProps) {
               <Send className="size-5" aria-hidden />
             </button>
           </form>
-        </section>
-      )}
+          </motion.section>
+        )}
+      </AnimatePresence>
 
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="ml-auto flex items-center gap-2 rounded-full bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+        className={`pointer-events-auto absolute right-7 items-center gap-2 rounded-full bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-[bottom] duration-300 ease-out hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 sm:static sm:right-auto sm:ml-auto ${
+          isOpen ? 'hidden sm:flex' : 'flex'
+        } ${lifted ? 'bottom-[calc(min(72svh,42rem)+1.5rem)]' : 'bottom-4'}`}
         aria-expanded={isOpen}
         aria-controls="queue-assistant-question"
       >

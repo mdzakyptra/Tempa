@@ -11,11 +11,10 @@ import { StatusHistoryService } from './status-history.service';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { UpdateStatusResponseDto } from './dto/update-status-response.dto';
 import { StatusHistoryResponseDto } from './dto/status-history-response.dto';
-import { Auth } from '../auth/decorators/auth.decorator';
+import { PetugasPanelOnly } from '../auth/decorators/petugas-panel-only.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ApiStandardResponse } from '../common/decorators/api-standard-response.decorator';
-import { Peran } from '../../generated/prisma/client';
 
 
 @ApiTags('Status Laporan')
@@ -25,7 +24,7 @@ export class StatusHistoryController {
 
   //<---------- updateStatus -------------->
   @Patch('status')
-  @Auth(Peran.petugas)
+  @PetugasPanelOnly()
   @ApiStandardResponse(UpdateStatusResponseDto, {
     description: 'Status berhasil diubah',
   })

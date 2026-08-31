@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ListFilter, MapPin, PanelBottomClose, PanelBottomOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { ALL_REPORTS_PATH, apiFetchPaginated } from '../lib/api'
 import { ReportCard, type ReportListItem } from '../components/report-card'
 import { ReportFilter, type ReportFilterValue } from '../components/report-filter'
 import { CityMap, type CityMapMarker } from '../components/city-map'
+import { useSetQueueAssistantLifted } from '../lib/queue-assistant-lift'
 import ScrollReveal from '../components/landing/animations/ScrollReveal'
 
 //<---------- CardSkeleton -------------->
@@ -34,8 +35,12 @@ export default function Antrean() {
     jenis_kerusakan: '',
   })
   const [page, setPage] = useState(1)
-  const [isPanelOpen, setIsPanelOpen] = useState(true)
+  // Deep-link dari Panel Petugas (?laporan=<id>) — panel daftar langsung
+  // kebuka biar kartu yang di-highlight (lihat di bawah) kelihatan.
+  const laporanId = searchParams.get('laporan')
+  const [isPanelOpen, setIsPanelOpen] = useState(() => Boolean(laporanId))
   const [isHeatmap, setIsHeatmap] = useState(false)
+  useSetQueueAssistantLifted(isPanelOpen)
 
   //<---------- handleFilterChange -------------->
   // Ganti filter selalu balik ke halaman 1 — halaman lama bisa nggak ada
@@ -76,6 +81,17 @@ export default function Antrean() {
 
   const isFilterActive = filter.kawasan !== '' || filter.jenis_kerusakan !== ''
 
+  const highlightedReport = laporanId ? semuaLaporan.find((report) => report.id === laporanId) : undefined
+
+  // Lompat ke halaman yang berisi laporan yang di-deep-link, sekali data
+  // datang — supaya kartunya kebaca di daftar, bukan ketutup di halaman lain.
+  useEffect(() => {
+    if (!laporanId || !semuaLaporanResponse) return
+    const index = laporanTersaring.findIndex((report) => report.id === laporanId)
+    if (index !== -1) setPage(Math.floor(index / 10) + 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [laporanId, semuaLaporanResponse])
+
   const markers: CityMapMarker[] = semuaLaporan
     .filter((report) => !filter.kawasan || report.kawasan === filter.kawasan)
     .filter((report) => !filter.jenis_kerusakan || report.jenis_kerusakan === filter.jenis_kerusakan)
@@ -83,19 +99,20 @@ export default function Antrean() {
     .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul, weight: r.skor }))
 
   return (
-    <div className="bg-neutral-100 p-3 text-black sm:p-6">
-      <div className="mx-auto mb-5 max-w-[1600px] px-1 sm:px-0">
+    <div className="h-full overflow-hidden bg-neutral-100 p-3 text-black sm:p-5">
+      <div className="mx-auto mb-3 max-w-[1600px] px-1 sm:px-0">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">Aspiraku</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Peta prioritas laporan</h1>
       </div>
 
-      <main className="relative mx-auto h-[calc(100svh-9.5rem)] min-h-[600px] max-w-[1600px] overflow-hidden rounded-3xl border border-black/10 bg-neutral-200 shadow-sm sm:h-[calc(100svh-10.5rem)]">
+      <main className="relative mx-auto h-[calc(100%-4.25rem)] max-w-[1600px] overflow-hidden rounded-3xl border border-black/10 bg-neutral-200 shadow-sm">
         {markers.length > 0 ? (
           <div className="absolute inset-0">
             <CityMap
               key={isHeatmap ? 'heatmap' : 'markers'}
               markers={markers}
-              zoom={isHeatmap ? 4 : 12}
+              center={highlightedReport && highlightedReport.lat !== null && highlightedReport.lng !== null ? [highlightedReport.lat, highlightedReport.lng] : undefined}
+              zoom={highlightedReport ? 16 : isHeatmap ? 4 : 12}
               heatmap={isHeatmap}
               onMarkerClick={(marker) => navigateToReport(marker.id)}
             />
@@ -107,7 +124,7 @@ export default function Antrean() {
           </div>
         )}
 
-        <div className="absolute top-4 right-4 z-[500] flex items-center gap-2">
+        <div className="absolute top-4 left-12 z-[500] flex items-center gap-2">
           <div className="pointer-events-none rounded-full border border-black/10 bg-white/90 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-600 shadow-sm backdrop-blur-sm">
             {isHeatmap ? 'Peta kepadatan' : `${markers.length} titik di peta`}
           </div>
@@ -122,7 +139,7 @@ export default function Antrean() {
         </div>
 
         {isHeatmap && (
-          <div className="pointer-events-none absolute right-4 bottom-4 z-[500] rounded-xl border border-black/10 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
+          <div className="pointer-events-none absolute right-4 bottom-30 z-[500] rounded-xl border border-black/10 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm sm:right-6 sm:bottom-24">
             <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-500">Kepadatan & prioritas</p>
             <div className="mt-1.5 h-2 w-32 rounded-full bg-linear-to-r from-yellow-200 via-orange-400 to-red-700" />
             <div className="mt-1 flex justify-between font-mono text-[9px] text-neutral-500">
@@ -136,19 +153,22 @@ export default function Antrean() {
           <button
             type="button"
             onClick={() => setIsPanelOpen(true)}
-            className="absolute top-4 left-4 z-[500] flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+            className="absolute right-4 bottom-15 z-[500] flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 sm:top-4 sm:right-4 sm:bottom-auto"
             aria-controls="queue-panel"
             aria-expanded="false"
           >
-            <PanelLeftOpen className="size-4" aria-hidden />
-            Buka antrean
+            {/* Panel-nya slide dari bawah di mobile, dari kanan di sm+ — ikon
+                ikutan arahnya (dorong ke atas vs dorong ke kiri). */}
+            <PanelBottomOpen className="size-4 sm:hidden" aria-hidden />
+            <PanelRightOpen className="hidden size-4 sm:block" aria-hidden />
+            {meta ? `Daftar laporan · ${meta.total}` : 'Daftar laporan'}
           </button>
         )}
 
         <aside
           id="queue-panel"
-          className={`absolute inset-x-3 top-16 bottom-3 z-[500] flex flex-col overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-transform duration-300 sm:inset-x-auto sm:top-4 sm:bottom-4 sm:left-4 sm:w-[min(26rem,calc(100%-2rem))] ${
-            isPanelOpen ? 'translate-x-0 translate-y-0' : 'pointer-events-none -translate-x-[calc(100%+2rem)] sm:-translate-x-[calc(100%+2rem)]'
+          className={`absolute inset-x-0 bottom-0 z-[500] flex h-[min(72svh,42rem)] flex-col overflow-hidden rounded-t-3xl border border-black/10 bg-white shadow-2xl transition-transform duration-300 sm:inset-x-auto sm:top-4 sm:right-4 sm:bottom-4 sm:h-auto sm:w-[min(24rem,calc(100%-2rem))] sm:rounded-2xl ${
+            isPanelOpen ? 'translate-x-0 translate-y-0' : 'pointer-events-none translate-y-[calc(100%+1rem)] sm:translate-x-[calc(100%+2rem)] sm:translate-y-0'
           }`}
           aria-hidden={!isPanelOpen}
         >
@@ -165,7 +185,8 @@ export default function Antrean() {
               className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300"
               aria-label="Tutup panel antrean"
             >
-              <PanelLeftClose className="size-5" aria-hidden />
+              <PanelBottomClose className="size-5 sm:hidden" aria-hidden />
+              <PanelRightClose className="hidden size-5 sm:block" aria-hidden />
             </button>
           </div>
 
@@ -202,11 +223,16 @@ export default function Antrean() {
               <div className="flex flex-col gap-4">
                 {reports.map((report, i) => (
                   <ScrollReveal key={report.id} direction="up" duration={0.5} delay={Math.min(i, 5) * 0.05}>
-                    <ReportCard
-                      report={report}
-                      index={(meta ? (meta.page - 1) * meta.limit : 0) + i + 1}
-                      onSelect={() => navigateToReport(report.id)}
-                    />
+                    <div
+                      ref={report.id === laporanId ? (el) => el?.scrollIntoView({ block: 'center', behavior: 'smooth' }) : undefined}
+                      className={report.id === laporanId ? 'rounded-2xl ring-2 ring-neutral-900' : ''}
+                    >
+                      <ReportCard
+                        report={report}
+                        index={(meta ? (meta.page - 1) * meta.limit : 0) + i + 1}
+                        onSelect={() => navigateToReport(report.id)}
+                      />
+                    </div>
                   </ScrollReveal>
                 ))}
               </div>
