@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { NavLink, Outlet, useMatch } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, FilePlus2, LayoutDashboard, LogIn, LogOut, Menu, PanelLeftOpen, Route } from 'lucide-react'
-import { QueueAssistant } from './queue-assistant'
 import { getCachedUserSnapshot, getCurrentUser, isPetugasPanelAllowed, logout, type DecodedUser } from '../lib/auth'
 import { QueueAssistantLiftProvider } from '../lib/queue-assistant-lift'
+
+const QueueAssistant = lazy(() => import('./queue-assistant/QueueAssistant'))
 
 
 const BASE_NAV_ITEMS = [
@@ -135,7 +136,9 @@ export default function Layout() {
           </div>
         </div>
       )}
-      <QueueAssistant reportId={reportMatch?.params.id} lifted={isAssistantLifted} />
+      <Suspense fallback={null}>
+        <QueueAssistant reportId={reportMatch?.params.id} lifted={isAssistantLifted} />
+      </Suspense>
     </div>
   )
 }

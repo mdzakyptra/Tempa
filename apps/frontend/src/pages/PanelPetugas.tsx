@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'motion/react'
@@ -10,8 +10,9 @@ import type { ReportListItem } from '../components/report-card'
 import { StatusEditor } from '../components/status-editor'
 import { STATUS_LAPORAN_LABEL } from '../lib/report-enums'
 import { ScoreBreakdown } from '../components/score-breakdown'
-import { CityMap } from '../components/city-map'
 import ScrollReveal from '../components/landing/animations/ScrollReveal'
+
+const CityMap = lazy(() => import('../components/city-map/CityMap'))
 
 // Mirror apps/backend/src/photos/dto/report-photo-response.dto.ts (sama
 // kayak interface lokal di DetailLaporan.tsx — endpoint /photos gak ada di
@@ -213,7 +214,9 @@ export default function PanelPetugas() {
                               <div className="flex flex-col gap-4">
                                 {report.lat !== null && report.lng !== null ? (
                                   <div className="h-56 overflow-hidden rounded-xl border border-neutral-200">
-                                    <CityMap markers={[{ id: report.id, lat: report.lat, lng: report.lng, label: report.judul }]} />
+                                    <Suspense fallback={<div className="h-full w-full animate-pulse bg-neutral-100" />}>
+                                      <CityMap markers={[{ id: report.id, lat: report.lat, lng: report.lng, label: report.judul }]} />
+                                    </Suspense>
                                   </div>
                                 ) : (
                                   <div className="flex h-56 items-center justify-center rounded-xl border border-neutral-200 bg-white text-sm text-neutral-400">
