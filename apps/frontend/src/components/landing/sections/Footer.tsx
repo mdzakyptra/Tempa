@@ -5,11 +5,11 @@ import RollingText from "../animations/RollingText";
 export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-black/10">
-      <Marquee speed={22} className="py-10">
-        <span className="mx-6 text-6xl font-black uppercase tracking-tighter text-neutral-200 md:text-8xl">
+      <Marquee speed={22} className="py-5 sm:py-10">
+        <span className="mx-3 text-3xl font-black uppercase tracking-tighter text-neutral-200 sm:mx-6 sm:text-6xl md:text-8xl">
           Aspiraku —
         </span>
-        <span className="mx-6 text-6xl font-black uppercase tracking-tighter text-black md:text-8xl">
+        <span className="mx-3 text-3xl font-black uppercase tracking-tighter text-black sm:mx-6 sm:text-6xl md:text-8xl">
           transparansi aspirasi kota —
         </span>
       </Marquee>

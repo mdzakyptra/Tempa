@@ -2,8 +2,10 @@ import { lazy, Suspense, useState } from 'react'
 import { NavLink, Outlet, useMatch } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, FilePlus2, LayoutDashboard, LogIn, LogOut, Menu, PanelLeftOpen, Route } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { getCachedUserSnapshot, getCurrentUser, isPetugasPanelAllowed, logout, type DecodedUser } from '../lib/auth'
 import { QueueAssistantLiftProvider } from '../lib/queue-assistant-lift'
+
 
 const QueueAssistant = lazy(() => import('./queue-assistant/QueueAssistant'))
 
@@ -121,21 +123,35 @@ export default function Layout() {
         </main>
       </div>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[1000] md:hidden">
-          <button type="button" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/30" aria-label="Tutup menu" />
-          <div className="relative h-full w-72 bg-white shadow-2xl">
-            <Sidebar
-              collapsed={false}
-              onToggle={() => setMobileOpen(false)}
-              onNavigate={() => setMobileOpen(false)}
-              navItems={navItems}
-              user={userQuery.data}
-              onLogout={handleLogout}
-            />
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="fixed inset-0 z-[1000] md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <button type="button" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/30" aria-label="Tutup menu" />
+            <motion.div
+              className="relative h-full w-72 bg-white shadow-2xl"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32, mass: 0.8 }}
+            >
+              <Sidebar
+                collapsed={false}
+                onToggle={() => setMobileOpen(false)}
+                onNavigate={() => setMobileOpen(false)}
+                navItems={navItems}
+                user={userQuery.data}
+                onLogout={handleLogout}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Suspense fallback={null}>
         <QueueAssistant reportId={reportMatch?.params.id} lifted={isAssistantLifted} />
       </Suspense>

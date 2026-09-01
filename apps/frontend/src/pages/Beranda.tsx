@@ -8,22 +8,21 @@ import WorkStack from '../components/landing/sections/WorkStack'
 import MapReport from '../components/landing/sections/MapReport'
 import Footer from '../components/landing/sections/Footer'
 import HabitFaqScroller from '../components/landing/sections/HabitFaqScroller'
-import LoadingScreen, { hasSeenSplash } from '../components/loading-screen/LoadingScreen'
+import LoadingScreen from '../components/loading-screen/LoadingScreen'
 
-const SPLASH_SESSION_KEY = 'aspiraku-beranda-splash-seen'
+
 
 //<---------- Beranda -------------->
 // Konten Beranda (Hero-nya punya globe Three.js, MapReport punya globe
 // WireframeDotted-nya sendiri) sengaja BARU dimount setelah splash mulai
-// fade-out — lihat komentar di LoadingScreen.tsx. `hasSeenSplash()` dibaca
-// sinkron di initializer biar returning-visitor (splash nggak nongol)
-// langsung dapet `true`, nggak kena delay sama sekali.
+// fade-out — lihat komentar di LoadingScreen.tsx. Splash selalu ditampilkan
+// setiap halaman dimuat, termasuk ketika browser melakukan refresh.
 export default function Beranda() {
-  const [showContent, setShowContent] = useState(() => hasSeenSplash(SPLASH_SESSION_KEY))
+  const [showContent, setShowContent] = useState(false)
 
   return (
     <div className="font-display overflow-x-clip bg-white text-black antialiased">
-      <LoadingScreen sessionKey={SPLASH_SESSION_KEY} onExitStart={() => setShowContent(true)} />
+      <LoadingScreen oncePerSession={false} progressDurationMs={2600} onExitStart={() => setShowContent(true)} />
 
       {showContent && (
         <>
