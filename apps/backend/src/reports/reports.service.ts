@@ -103,6 +103,26 @@ export class ReportsService {
       },
     });
 
+    // Warga yang lagi login pas lapor otomatis kehitung dukung laporannya
+    // sendiri — sama persis kayak vote biasa (VotesService.vote), cuma
+    // dipicu di sini bukan lewat POST /votes terpisah. votes_count nggak
+    // disentuh manual, tetap dijaga trigger DB (JEK-21) begitu baris vote
+    // ini masuk. Anonim (userId undefined) dilewatin — Vote.user_id wajib
+    // ada, laporan anonim ya tetap mulai dari 0 dukungan kayak sebelumnya.
+    // Dibungkus try/catch biar kegagalan di sini nggak ikut nggagalin
+    // create laporan-nya sendiri.
+    if (userId) {
+      try {
+        await this.prisma.vote.create({
+          data: { report_id: report.id, user_id: userId },
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Gagal catat vote otomatis buat laporan ${report.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
     // Sekali per laporan, pas dibuat — bukan dihitung ulang tiap kali
     // deteksi duplikat dipanggil (JEK-19). Sengaja di-await di sini (bukan
     // fire-and-forget) biar kriteria "embedding tersimpan setiap laporan
