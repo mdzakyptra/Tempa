@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -6,10 +6,10 @@ import { motion } from 'motion/react'
 import { ArrowRight, ChevronLeft } from 'lucide-react'
 import { ApiError, apiFetch } from '../lib/api'
 import { cacheUserSnapshot, isPetugasPanelAllowed, storeTokens, type TokenPair } from '../lib/auth'
+import LoadingScreen from '../components/loading-screen/LoadingScreen'
 
 
 const Dither = lazy(() => import('../components/Dither'))
-
 
 type AuthMode = 'login' | 'register'
 
@@ -63,6 +63,34 @@ export default function Auth() {
   const [curtain, setCurtain] = useState<CurtainPhase>('idle')
   const [curtainDirection, setCurtainDirection] = useState<CurtainDirection>('rtl')
   const [pendingMode, setPendingMode] = useState<AuthMode | null>(null)
+  // Dither (WebGL, shader-init berat) sengaja ditunda ~200ms — bukan
+  // dimount bareng persis splash-nya. Kalau bareng, shader-compile Dither
+  // rebutan main thread sama animasi masuk splash & fetch/dot-generation
+  // punya RotatingGlobe splash, keliatan lag pas splash BARU muncul. 200ms
+  // cukup buat kasih splash "napas" render frame pertamanya duluan, dan
+  // masih nyisain ~1.8 detik dari total durasi splash (2 detik) buat
+  // Dither settle sebelum ke-reveal — jadi tetep nggak blink.
+  const [ditherReady, setDitherReady] = useState(false)
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDitherReady(true), 200)
+    return () => window.clearTimeout(timeout)
+  }, [])
+
+  // Route ini lazy-loaded (App.tsx) dengan Suspense fallback={null} — jadi
+  // begitu chunk-nya kelar didownload, React commit SATU KALI langsung
+  // gede: LoadingScreen, RotatingGlobe (d3 projection setup + kick off
+  // fetch/dot-generation), curtain, section, form — semuanya bareng dalam
+  // satu commit, itu yang kerasa "lag" pas pertama kali muncul (browser
+  // belum sempat paint apa-apa di antaranya). `splashReady` misahin jadi 2
+  // fase: frame PERTAMA cuma render div putih kosong (murah, instant),
+  // baru SETELAH itu (nunggu 1 rAF tick — 1 layar udah sempat kepaint)
+  // konten berat di-mount. Browser dapet 1 paint "murah" duluan sebelum
+  // disuruh kerja berat, jadi transisinya kerasa lebih mulus.
+  const [splashReady, setSplashReady] = useState(false)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setSplashReady(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
 
   const authMutation = useMutation({
     mutationFn: (values: AuthFormValues) => {
@@ -132,6 +160,18 @@ export default function Auth() {
 
   return (
     <div className="font-display min-h-screen bg-neutral-50">
+      {!splashReady ? null : (
+        <>
+      {/* Isi halaman (curtain, Dither, form) dirender LANGSUNG dari awal,
+          bukan ditunda sampai splash kelar — beda dari Beranda. Auth cuma
+          punya 1 canvas berat (Dither), jauh lebih ringan dari 3 render
+          loop yang numpuk di Beranda, jadi aman dirender bareng splash.
+          Ini juga yang bikin transisinya nggak "blink": pas splash hilang,
+          Dither-nya udah sempet render & settle di baliknya (dikasih
+          waktu penuh durasi splash buat itu, ~2 detik), bukan baru mulai
+          mount pas ke-reveal. */}
+      <LoadingScreen oncePerSession={false} progressDurationMs={2000} steppedProgress />
+
       {curtain !== 'idle' && (
         <motion.div
           initial={{ x: curtain === 'closing' ? (curtainDirection === 'rtl' ? '100%' : '-100%') : '0%' }}
@@ -156,19 +196,21 @@ export default function Auth() {
             <aside>) — biar sudut rounded panel putih motong tekstur dither
             yang sama nyambung, bukan nyingkap warna polos bg-neutral-950
             section yang nggak ada tekstur dither-nya. */}
-        <div className="absolute inset-0">
-          <Suspense fallback={<div className="h-full w-full bg-neutral-950" />}>
-            <Dither
-              waveColor={[0.38, 0.55, 0.45]}
-              backgroundColor={[0.02, 0.03, 0.02]}
-              colorNum={4}
-              pixelSize={3}
-              waveAmplitude={0.3}
-              waveFrequency={3}
-              waveSpeed={0.05}
-              mouseRadius={0.3}
-            />
-          </Suspense>
+        <div className="absolute inset-0 bg-neutral-950">
+          {ditherReady && (
+            <Suspense fallback={<div className="h-full w-full bg-neutral-950" />}>
+              <Dither
+                waveColor={[0.38, 0.55, 0.45]}
+                backgroundColor={[0.02, 0.03, 0.02]}
+                colorNum={4}
+                pixelSize={3}
+                waveAmplitude={0.3}
+                waveFrequency={3}
+                waveSpeed={0.05}
+                mouseRadius={0.3}
+              />
+            </Suspense>
+          )}
         </div>
 
         <div
@@ -308,6 +350,8 @@ export default function Auth() {
           </div>
         </aside>
       </section>
+        </>
+      )}
     </div>
   )
 }

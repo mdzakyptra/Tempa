@@ -23,6 +23,7 @@ interface FaqData {
 interface FaqCardProps {
   question: string
   answer: string
+  compact?: boolean
 }
 
 interface HorizontalScrollerProps {
@@ -90,11 +91,15 @@ const FAQ_DATA: FaqData = {
 }
 
 //<---------- FaqCard ------------>
-function FaqCard({ question, answer }: FaqCardProps) {
+function FaqCard({ question, answer, compact = false }: FaqCardProps) {
+  const mobileSize = compact
+    ? 'w-[min(12rem,calc(100vw-5rem))] rounded-lg p-2'
+    : 'w-[min(17rem,calc(100vw-3rem))] rounded-xl p-3'
+
   return (
-    <article className="w-[min(24rem,calc(100vw-3rem))] shrink-0 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-bold text-neutral-900">{question}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-neutral-600">{answer}</p>
+    <article className={`${mobileSize} shrink-0 border border-neutral-200 bg-white shadow-sm sm:w-[min(24rem,calc(100vw-3rem))] sm:rounded-2xl sm:p-6`}>
+      <h3 className={`${compact ? 'text-[11px]' : 'text-sm'} font-bold text-neutral-900 sm:text-lg`}>{question}</h3>
+      <p className={`${compact ? 'mt-1 text-[9px]' : 'mt-1.5 text-[11px]'} leading-relaxed text-neutral-600 sm:mt-3 sm:text-sm`}>{answer}</p>
     </article>
   )
 }
@@ -106,8 +111,8 @@ function HorizontalScroller({ children, speed, direction }: HorizontalScrollerPr
   return (
     <div className="scroller-mask w-full overflow-hidden">
       <div className={`flex w-max ${animationClass}`} style={{ '--scroll-duration': speed } as CSSProperties}>
-        <div className="flex shrink-0 items-stretch gap-5 px-2 sm:gap-8 sm:px-4">{children}</div>
-        <div className="flex shrink-0 items-stretch gap-5 px-2 sm:gap-8 sm:px-4" aria-hidden="true">
+        <div className="flex shrink-0 items-stretch gap-3 px-2 sm:gap-8 sm:px-4">{children}</div>
+        <div className="flex shrink-0 items-stretch gap-3 px-2 sm:gap-8 sm:px-4" aria-hidden="true">
           {children}
         </div>
       </div>
@@ -118,23 +123,23 @@ function HorizontalScroller({ children, speed, direction }: HorizontalScrollerPr
 //<---------- HabitFaqScroller ------------>
 export default function HabitFaqScroller() {
   return (
-    <section id="faq" className="overflow-hidden bg-neutral-50 py-16 sm:py-20" aria-labelledby="landing-faq-title">
+    <section id="faq" className="overflow-hidden bg-neutral-50 py-10 sm:py-20" aria-labelledby="landing-faq-title">
       <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
         <div className="max-w-2xl text-center">
-          <h2 id="landing-faq-title" className="animate-fade-in-up text-3xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
+          <h2 id="landing-faq-title" className="animate-fade-in-up text-xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
             {FAQ_DATA.mainTitle}
           </h2>
-          <p className="animate-fade-in-up animation-delay-200 mt-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
+          <p className="animate-fade-in-up animation-delay-200 mt-2 text-xs leading-relaxed text-neutral-600 sm:mt-4 sm:text-lg">
             {FAQ_DATA.mainSubtitle}
           </p>
         </div>
       </div>
 
-      <div className="mx-auto mt-10 flex w-full max-w-7xl flex-col gap-5 px-4 sm:mt-12 sm:gap-8 sm:px-6">
+      <div className="mx-auto mt-6 flex w-full max-w-7xl flex-col gap-3 px-4 sm:mt-12 sm:gap-8 sm:px-6">
         {FAQ_DATA.rows.map((row) => (
           <HorizontalScroller key={row.id} speed={row.speed} direction={row.direction}>
             {row.faqItems.map((item) => (
-              <FaqCard key={item.id} question={item.question} answer={item.answer} />
+              <FaqCard key={item.id} question={item.question} answer={item.answer} compact={row.id === 'transparansi'} />
             ))}
           </HorizontalScroller>
         ))}
