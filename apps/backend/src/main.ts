@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -31,7 +32,11 @@ function setupSwagger(app: INestApplication) {
 
 //<---------- bootstrap -------------->
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Railway (dan proxy sejenis) ada di depan app — tanpa ini req.ip kebaca
+  // IP proxy internal buat semua user, bikin ThrottlerGuard rate-limit
+  // rame-rame bareng, bukan per-user.
+  app.set('trust proxy', 1);
   // CSP dilonggarin buat script/style inline yang dipakai Swagger UI (JEK-9) —
   // rekomendasi resmi NestJS docs (docs.nestjs.com/security/helmet).
   // Foto laporan gak lewat sini sama sekali (dilayani langsung dari S3/CDN,
