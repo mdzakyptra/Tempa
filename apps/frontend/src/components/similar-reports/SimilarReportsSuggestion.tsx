@@ -146,7 +146,11 @@ export default function SimilarReportsSuggestion({
                   )}
                 </div>
                 {mergeMutation.isError && mergeMutation.variables === report.id && (
-                  <p className="mt-1 text-xs text-red-600">Gagal gabung, coba lagi.</p>
+                  <p className="mt-1 text-xs text-red-600">
+                    {mergeMutation.error instanceof Error && mergeMutation.error.message
+                      ? mergeMutation.error.message
+                      : 'Gagal gabung, coba lagi.'}
+                  </p>
                 )}
               </div>
 

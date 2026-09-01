@@ -319,27 +319,3 @@ export function VoteCounterMobile({ progress }: { progress: MotionValue<number> 
   );
 }
 
-//<---------- ChatBubble -------------->
-export function ChatBubble({ progress }: { progress: MotionValue<number> }) {
-  const [start, end] = beatRange(3);
-  const opacity = useTransform(progress, [start, start + 0.06, end - 0.06, end], [0, 1, 1, 1]);
-  const y = useTransform(progress, [start, start + 0.06], [16, 0]);
-
-  return (
-    <motion.div
-      style={{ opacity, y }}
-      className="pointer-events-none absolute bottom-10 right-6 z-10 hidden w-80 rounded-2xl border border-black/10 bg-white/80 p-5 backdrop-blur-md sm:block md:right-12"
-    >
-      <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-        Asisten antrean
-      </p>
-      <p className="mb-3 ml-auto w-fit rounded-full bg-black px-4 py-2 text-xs text-white">
-        Kenapa laporan ini di posisi #3?
-      </p>
-      <p className="rounded-2xl bg-black/5 px-4 py-3 text-xs leading-relaxed text-neutral-700">
-        Skor bahaya tinggi (35%) dan lokasinya di jalur sekolah (+20%) — total
-        82/100, di atas laporan lain di kawasanmu.
-      </p>
-    </motion.div>
-  );
-}

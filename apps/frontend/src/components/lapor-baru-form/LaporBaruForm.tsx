@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { apiFetch } from '../../lib/api'
+import { reverseGeocodeID } from '../../lib/geocode'
 import { SimilarReportsSuggestion } from '../similar-reports'
 import { LocationPicker } from '../location-picker'
 import type { LocationValue } from '../location-picker'
@@ -42,6 +43,31 @@ export default function LaporBaruForm({ onCreated }: LaporBaruFormProps) {
   const [touched, setTouched] = useState<Partial<Record<keyof LaporBaruFormState, boolean>>>({})
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
   const [location, setLocation] = useState<LocationValue | null>(null)
+  // Beda dari `touched.kawasan` — itu ke-set cuma dengan blur (buat nampilin
+  // error validasi), sedangkan ini cuma ke-set kalau warga BENERAN ngetik.
+  // Klik field kawasan lalu klik peta = blur doang, bukan edit.
+  const kawasanEditedRef = useRef(false)
+
+  // Kawasan diisi otomatis dari titik di peta (nama kelurahan/kecamatan
+  // dari OSM) — konsisten antar warga, gak tergantung ketikan bebas. Cuma
+  // nge-overwrite kalau warga belum pernah ngetik di field-nya sendiri.
+  useEffect(() => {
+    if (!location || kawasanEditedRef.current) return
+    let cancelled = false
+
+    reverseGeocodeID(location.lat, location.lng)
+      .then((kawasan) => {
+        if (!cancelled) setForm((prev) => ({ ...prev, kawasan }))
+      })
+      .catch(() => {
+        // Reverse geocode gagal (offline/rate limit) — biarin warga isi manual.
+      })
+
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location])
 
   const errors = useMemo(() => validateLaporBaruForm(form), [form])
 
@@ -112,9 +138,12 @@ export default function LaporBaruForm({ onCreated }: LaporBaruFormProps) {
           id="kawasan"
           type="text"
           value={form.kawasan}
-          onChange={(e) => handleChange('kawasan', e.target.value)}
+          onChange={(e) => {
+            kawasanEditedRef.current = true
+            handleChange('kawasan', e.target.value)
+          }}
           onBlur={() => handleBlur('kawasan')}
-          placeholder="Contoh: Kelurahan Sukajadi"
+          placeholder="Terisi otomatis setelah pilih titik di peta"
           className={inputClass}
         />
         <FieldError message={showError('kawasan')} />

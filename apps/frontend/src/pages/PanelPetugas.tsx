@@ -87,9 +87,12 @@ function PanelShell({ left, right }: { left: ReactNode; right: ReactNode }) {
       <h1 className="text-2xl font-bold text-neutral-900">Panel Petugas</h1>
       <p className="mt-1 text-sm text-neutral-500">Pilih laporan untuk mengubah status dan menambahkan catatan.</p>
 
+      {/* min-w-0 wajib di dua grid item: default `min-width: auto` bikin
+          kolom melar ngikut lebar intrinsik kartu laporan (628px di HP),
+          konten kepotong ancestor overflow-hidden. */}
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div>{left}</div>
-        <div className="lg:sticky lg:top-6 lg:h-fit">{right}</div>
+        <div className="min-w-0">{left}</div>
+        <div className="min-w-0 lg:sticky lg:top-6 lg:h-fit">{right}</div>
       </div>
     </div>
   )

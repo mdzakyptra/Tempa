@@ -72,9 +72,9 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
 
     const map = new mapboxgl.Map({
       container,
-      // Samakan dengan CityMap di /antrean: basemap terang, kamera miring,
-      // dan ekstrusi gedung 3D agar konteks titik lebih mudah dikenali.
-      style: 'mapbox://styles/mapbox/light-v11',
+      // Samakan dengan CityMap di /antrean: basemap satelit berwarna, kamera
+      // miring, dan ekstrusi gedung 3D agar konteks titik lebih mudah dikenali.
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
       center: value ? [value.lng, value.lat] : DEFAULT_CENTER,
       zoom: value ? 15 : 4,
       pitch: 55,
@@ -91,13 +91,15 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
           id: 'location-picker-3d-buildings',
           source: 'composite',
           'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'],
+          // Gak pake filter ['==','extrude','true'] — sama kayak CityMap,
+          // itu nyaring footprint yang gak punya properti `extrude` dari OSM
+          // (banyak area di luar CBD padat), bikin gedung keliatan flat.
           type: 'fill-extrusion',
           minzoom: 14,
           paint: {
             'fill-extrusion-color': '#d4d4d4',
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-height': ['coalesce', ['get', 'height'], 8],
+            'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0],
             'fill-extrusion-opacity': 0.75,
           },
         },
