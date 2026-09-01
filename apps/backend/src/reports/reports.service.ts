@@ -28,7 +28,7 @@ import {
 } from '../../generated/prisma/client';
 
 
-// Baris mentah hasil raw query — nama kolom persis kayak alias di SQL.
+// Baris mentah hasil raw query dan nama kolom persis kayak alias di SQL.
 interface ReportScoredRow {
   id: string;
   judul: string;

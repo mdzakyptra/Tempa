@@ -27,7 +27,7 @@ async function main(): Promise<void> {
   const warga = await prisma.profile.findMany({ where: { peran: Peran.warga }, select: { id: true } });
   const wargaIds = warga.map((w) => w.id);
   if (wargaIds.length === 0) {
-    throw new Error('Nggak ada profil warga di DB ini — jalankan seed.ts dulu buat data dasar.');
+    throw new Error('Nggak ada profil warga di DB ini  jalankan seed.ts dulu buat data dasar.');
   }
 
   let dibuat = 0;

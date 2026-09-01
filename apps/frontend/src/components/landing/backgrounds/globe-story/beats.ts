@@ -22,19 +22,19 @@ export const BEATS: Beat[] = [
     id: "lapor",
     eyebrow: "01 — Lapor",
     title: "Satu laporan, satu titik di peta.",
-    desc: "Warga foto kerusakan, tandai lokasinya persis — laporan langsung masuk antrean kota, bukan tumpukan keluhan tanpa arah.",
+    desc: "Warga foto kerusakan, tandai lokasinya persis maka laporan langsung masuk antrean kota, bukan tumpukan keluhan tanpa arah.",
   },
   {
     id: "skor",
     eyebrow: "02 — Skor Prioritas",
     title: "Skornya kelihatan, bukan tebakan.",
-    desc: "Bahaya, jumlah terdampak, lama menunggu, dan jalur vital dihitung terbuka lewat query — semua orang bisa lihat kenapa satu laporan didahulukan.",
+    desc: "Bahaya, jumlah terdampak, lama menunggu, dan jalur vital dihitung terbuka lewat query dan semua orang bisa lihat kenapa satu laporan didahulukan.",
   },
   {
     id: "dukungan",
     eyebrow: "03 — Dukungan Warga",
     title: "Dukungan warga lain, terhitung otomatis.",
-    desc: "Laporan yang sama dirasakan banyak orang naik sendiri lewat trigger basis data — makin banyak dukungan, makin cepat dilihat petugas.",
+    desc: "Laporan yang sama dirasakan banyak orang naik sendiri lewat trigger basis data sehingga  makin banyak dukungan, makin cepat dilihat petugas.",
   },
 ];
 
