@@ -28,6 +28,9 @@ export class JalurVitalService {
   private readonly logger = new Logger(JalurVitalService.name);
 
   //<---------- isJalurVital -------------->
+  // Vital kalau titiknya ada di jalan kelas utama, ATAU ada sekolah/RS di
+  // sekitarnya. Satu request Tilequery nutup dua-duanya — layer asalnya
+  // dibedain lewat properties.tilequery.layer.
   async isJalurVital(lat: number, lng: number): Promise<boolean> {
     const token = process.env.MAPBOX_TOKEN;
     if (!token) {

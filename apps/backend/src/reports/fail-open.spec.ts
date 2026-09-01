@@ -54,14 +54,16 @@ describe('Fail-open layanan eksternal', () => {
       await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(true);
     });
 
-    it('true kalau titiknya di jalan kelas utama', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          features: [{ properties: { class: 'primary', tilequery: { layer: 'road' } } }],
-        }),
-      });
-      await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(true);
+    it('true di jalan kelas utama, termasuk tertiary (hasil kalibrasi)', async () => {
+      for (const kelas of ['primary', 'tertiary']) {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve({
+            features: [{ properties: { class: kelas, tilequery: { layer: 'road' } } }],
+          }),
+        });
+        await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(true);
+      }
     });
 
     it('false kalau cuma jalan kecil / POI biasa di sekitar', async () => {
@@ -69,6 +71,7 @@ describe('Fail-open layanan eksternal', () => {
         ok: true,
         json: () => Promise.resolve({
           features: [
+            { properties: { class: 'street', tilequery: { layer: 'road' } } },
             { properties: { class: 'service', tilequery: { layer: 'road' } } },
             { properties: { maki: 'restaurant', tilequery: { layer: 'poi_label' } } },
           ],

@@ -52,7 +52,11 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
     const timer = window.setTimeout(async () => {
       setIsSearching(true)
       try {
-        setSearchResults(await searchLocationID(query, controller.signal))
+        // Bias ke area peta yang lagi dilihat (atau titik yang udah dipilih)
+        // — hasil jadi relevan tanpa warga harus ngetik nama kota.
+        const c = mapRef.current?.getCenter()
+        const near = value ?? (c ? { lat: c.lat, lng: c.lng } : undefined)
+        setSearchResults(await searchLocationID(query, controller.signal, near))
       } catch (error) {
         if ((error as Error).name !== 'AbortError') setSearchResults([])
       } finally {
@@ -189,6 +193,13 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
           autoComplete="off"
         />
         {isSearching && <p className="mt-1 text-xs text-gray-500">Mencari lokasi…</p>}
+        {/* Data OSM nggak punya semua toko/warung kecil — arahkan warga ke
+            jalur yang pasti berhasil, jangan bikin buntu di pencarian. */}
+        {!isSearching && searchQuery.trim().length >= 3 && searchResults.length === 0 && (
+          <p className="mt-1 text-xs text-neutral-500">
+            Tempatnya belum ada di peta? Klik langsung titiknya di peta bawah ini.
+          </p>
+        )}
         {searchResults.length > 0 && (
           <ul className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
             {searchResults.map((result) => (
