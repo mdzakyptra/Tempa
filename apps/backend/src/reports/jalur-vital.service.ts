@@ -1,64 +1,56 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  JALUR_VITAL_RADIUS_METER,
-  JALUR_VITAL_POI_MAKI,
+  OVERPASS_URL,
+  JALUR_VITAL_TIMEOUT_MS,
+  JALUR_VITAL_POI_RADIUS_METER,
+  JALUR_VITAL_ROAD_RADIUS_METER,
   JALUR_VITAL_ROAD_CLASS,
+  JALUR_VITAL_AMENITY,
 } from './constants/jalur-vital.constant';
 
 
-interface TilequeryFeature {
-  properties?: {
-    class?: string;
-    maki?: string;
-    tilequery?: { layer?: string };
-  };
+interface OverpassResponse {
+  elements?: unknown[];
 }
 
-interface TilequeryResponse {
-  features?: TilequeryFeature[];
-}
-
-// Sama kayak GeminiEmbeddingService — gagal manggil Mapbox (token belum
-// diset, rate limit, down) sengaja nggak throw, balikin false, biar create
-// laporan tetap sukses. Mending jalur_vital salah "tidak" daripada bikin
-// warga gagal lapor gara-gara Mapbox down.
+// Sama kayak GeminiEmbeddingService — gagal manggil Overpass (down, lambat,
+// rate limit) sengaja nggak throw, balikin false, biar create laporan tetap
+// sukses. Mending jalur_vital salah "tidak" daripada warga gagal lapor.
 //<---------- JalurVitalService -------------->
 @Injectable()
 export class JalurVitalService {
   private readonly logger = new Logger(JalurVitalService.name);
 
   //<---------- isJalurVital -------------->
+  // Vital kalau di sekitar titik ada sekolah/RS/klinik/kampus, ATAU titiknya
+  // pas di jalan kelas utama. Satu query Overpass buat dua-duanya — cukup
+  // tahu ADA atau NGGAK, jadi `out ids 1` (berhenti di hasil pertama).
   async isJalurVital(lat: number, lng: number): Promise<boolean> {
-    const token = process.env.MAPBOX_TOKEN;
-    if (!token) {
-      this.logger.warn('MAPBOX_TOKEN belum diatur, skip cek jalur vital');
-      return false;
-    }
-
-    const url =
-      `https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/${lng},${lat}.json` +
-      `?radius=${JALUR_VITAL_RADIUS_METER}&limit=50&access_token=${token}`;
+    const query = `[out:json][timeout:10];(nwr["amenity"~"^(${JALUR_VITAL_AMENITY})$"](around:${JALUR_VITAL_POI_RADIUS_METER},${lat},${lng});way["highway"~"^(${JALUR_VITAL_ROAD_CLASS})$"](around:${JALUR_VITAL_ROAD_RADIUS_METER},${lat},${lng}););out ids 1;`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(OVERPASS_URL, {
+        method: 'POST',
+        // User-Agent wajib: Overpass nolak request tanpa UA yang jelas
+        // dengan 406, dan kebijakan pemakaian OSM minta aplikasi
+        // mengidentifikasi diri.
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Aspiraku/1.0 (https://www.aspiraku.my.id)',
+        },
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(JALUR_VITAL_TIMEOUT_MS),
+      });
+
       if (!response.ok) {
-        this.logger.warn(`Tilequery gagal (${response.status}), skip cek jalur vital`);
+        this.logger.warn(`Overpass gagal (${response.status}), skip cek jalur vital`);
         return false;
       }
 
-      const data = (await response.json()) as TilequeryResponse;
-      const features = data.features ?? [];
-
-      return features.some((feature) => {
-        const props = feature.properties;
-        const layer = props?.tilequery?.layer;
-
-        if (layer === 'poi_label') return JALUR_VITAL_POI_MAKI.includes(props?.maki ?? '');
-        if (layer === 'road') return JALUR_VITAL_ROAD_CLASS.includes(props?.class ?? '');
-        return false;
-      });
+      const data = (await response.json()) as OverpassResponse;
+      return (data.elements?.length ?? 0) > 0;
     } catch (error) {
-      this.logger.warn(`Tilequery error, skip cek jalur vital: ${(error as Error).message}`);
+      this.logger.warn(`Overpass error, skip cek jalur vital: ${(error as Error).message}`);
       return false;
     }
   }
