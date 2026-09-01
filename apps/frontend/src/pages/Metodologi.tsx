@@ -1,5 +1,4 @@
 import { motion } from 'motion/react'
-import { ArrowDownRight } from 'lucide-react'
 import CountUp from '../components/landing/animations/CountUp'
 
 
