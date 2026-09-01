@@ -7,14 +7,18 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
-import { useEffect, useRef, useState } from "react";
-import GlobeStoryScene from "../backgrounds/globe-story/Scene";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import HeroMapTexture from "../backgrounds/HeroMapTexture";
 import { BEATS, beatRange } from "../backgrounds/globe-story/beats";
 import { StepRail, ScoreCard, ScoreCardMobile, VoteCounter, VoteCounterMobile } from "./hero-overlays";
 import SplitText from "../animations/SplitText";
 import FlipWords from "../animations/FlipWords";
 import MagneticButton from "../animations/MagneticButton";
+
+// react-three-fiber + three (~230KB gzip) gak boleh ikut blokir first paint
+// landing page — splash LoadingScreen udah nutup ~2.6 detik duluan, cukup
+// buat chunk ini kefetch di background sebelum keliatan.
+const GlobeStoryScene = lazy(() => import("../backgrounds/globe-story/Scene"));
 
 
 /** decorative corner tick */
@@ -149,11 +153,13 @@ export default function HeroScrollStack() {
       >
         <HeroMapTexture />
         <motion.div style={{ x: globeX }} className="absolute inset-0">
-          <GlobeStoryScene
-            progressRef={progressRef}
-            screenAnchor={{ x: markerX, y: markerY }}
-            compact={!isDesktop}
-          />
+          <Suspense fallback={null}>
+            <GlobeStoryScene
+              progressRef={progressRef}
+              screenAnchor={{ x: markerX, y: markerY }}
+              compact={!isDesktop}
+            />
+          </Suspense>
         </motion.div>
 
         <Corner className="left-6 top-24 md:left-10" />
