@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import WireframeDottedGlobe, {
@@ -6,7 +6,12 @@ import WireframeDottedGlobe, {
   type GlobeZone,
   type GlobeZoneCluster,
 } from '@/components/ui/wireframe-dotted-globe'
-import { CityMap, type CityMapMarker, type CityMapZone } from '@/components/city-map'
+import type { CityMapMarker, CityMapZone } from '@/components/city-map'
+
+// Mapbox GL (~500KB gzip) gak boleh ikut ke-bundle statis di landing page —
+// CityMap baru muncul pas user beneran nge-dive dari globe ke map (lihat
+// `mapTarget` di bawah), jadi lazy-load aman, gak nunda first paint.
+const CityMap = lazy(() => import('@/components/city-map').then((m) => ({ default: m.CityMap })))
 import { searchLocationID, type GeocodeResult } from '@/lib/geocode'
 import { ALL_REPORTS_PATH, apiFetch } from '@/lib/api'
 import type { ReportListItem } from '@/components/report-card'
@@ -251,15 +256,17 @@ export default function GlobeMapTransition() {
               phase === 'map' ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
-            <CityMap
-              markers={mapTarget.markers}
-              zones={mapTarget.zones}
-              center={mapTarget.center}
-              zoom={mapTarget.zoom}
-              onMarkerClick={(marker) => navigate(`/laporan/${marker.id}`)}
-              onZoneClick={(kawasan, expanded) => setOpenedKawasan(expanded ? kawasan : null)}
-              resetExpandTrigger={collapseCounter}
-            />
+            <Suspense fallback={null}>
+              <CityMap
+                markers={mapTarget.markers}
+                zones={mapTarget.zones}
+                center={mapTarget.center}
+                zoom={mapTarget.zoom}
+                onMarkerClick={(marker) => navigate(`/laporan/${marker.id}`)}
+                onZoneClick={(kawasan, expanded) => setOpenedKawasan(expanded ? kawasan : null)}
+                resetExpandTrigger={collapseCounter}
+              />
+            </Suspense>
           </div>
         )}
       </div>
