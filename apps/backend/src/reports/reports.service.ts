@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -28,7 +29,7 @@ import {
 } from '../../generated/prisma/client';
 
 
-// Baris mentah hasil raw query — nama kolom persis kayak alias di SQL.
+// Baris mentah hasil raw query dan nama kolom persis kayak alias di SQL.
 interface ReportScoredRow {
   id: string;
   judul: string;
@@ -74,6 +75,8 @@ export interface ReportSimilarRow {
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingService: GeminiEmbeddingService,
@@ -100,13 +103,48 @@ export class ReportsService {
       },
     });
 
+    // Warga yang lagi login pas lapor otomatis kehitung dukung laporannya
+    // sendiri — sama persis kayak vote biasa (VotesService.vote), cuma
+    // dipicu di sini bukan lewat POST /votes terpisah. votes_count nggak
+    // disentuh manual, tetap dijaga trigger DB (JEK-21) begitu baris vote
+    // ini masuk. Anonim (userId undefined) dilewatin — Vote.user_id wajib
+    // ada, laporan anonim ya tetap mulai dari 0 dukungan kayak sebelumnya.
+    // Dibungkus try/catch biar kegagalan di sini nggak ikut nggagalin
+    // create laporan-nya sendiri.
+    if (userId) {
+      try {
+        await this.prisma.vote.create({
+          data: { report_id: report.id, user_id: userId },
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Gagal catat vote otomatis buat laporan ${report.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
     // Sekali per laporan, pas dibuat — bukan dihitung ulang tiap kali
     // deteksi duplikat dipanggil (JEK-19). Sengaja di-await di sini (bukan
     // fire-and-forget) biar kriteria "embedding tersimpan setiap laporan
     // baru dibuat" pasti kepenuhi; kalau Gemini lagi down, embedding cuma
     // tetap null (lihat GeminiEmbeddingService) — create laporan TETAP
     // sukses, gak boleh gagal gara-gara AI down.
-    await this.storeEmbedding(report.id, `${dto.judul} ${dto.deskripsi}`);
+    //
+    // try/catch di sini sengaja nutup celah lain: GeminiEmbeddingService
+    // sendiri udah nggak pernah throw (balikin null kalau API-nya
+    // bermasalah), tapi storeEmbedding masih punya langkah kedua — raw
+    // UPDATE ke Postgres — yang terpisah dari insert laporan di atas
+    // (bukan satu transaksi). Kalau UPDATE itu sendiri gagal karena
+    // masalah DB sesaat, laporannya udah kepenuhi tersimpan tapi request-nya
+    // bakal 500 kalau nggak ditangkep di sini — melanggar jaminan "create
+    // laporan TETAP sukses" yang sama persis buat kegagalan non-Gemini.
+    try {
+      await this.storeEmbedding(report.id, `${dto.judul} ${dto.deskripsi}`);
+    } catch (error) {
+      this.logger.warn(
+        `Gagal simpan embedding buat laporan ${report.id}: ${(error as Error).message}`,
+      );
+    }
 
     return report;
   }
@@ -206,12 +244,29 @@ export class ReportsService {
     );
   }
 
+  // Penanda transient — bukan cuma DNS blip (EAI_AGAIN), tapi juga koneksi
+  // ditolak/timeout dan kode error koneksi Prisma sendiri (P1001 = server
+  // nggak kejangkau, P1002 = timed out, P1017 = koneksi kepotong). Semuanya
+  // masuk akal buat diulang; error lain (constraint violation, dst.) tetap
+  // nggak masuk daftar ini, jadi tetap langsung dilempar apa adanya.
+  private static readonly TRANSIENT_ERROR_MARKERS = [
+    'EAI_AGAIN',
+    'ECONNREFUSED',
+    'ETIMEDOUT',
+    'P1001',
+    'P1002',
+    'P1017',
+  ];
+
   //<---------- isTransientDatabaseError ------------>
   private isTransientDatabaseError(error: unknown): boolean {
     let current: unknown = error;
 
     for (let depth = 0; depth < 3 && current instanceof Error; depth += 1) {
-      if (current.message.includes('EAI_AGAIN')) return true;
+      const message = current.message;
+      if (ReportsService.TRANSIENT_ERROR_MARKERS.some((marker) => message.includes(marker))) {
+        return true;
+      }
       current = current.cause;
     }
 
@@ -220,10 +275,12 @@ export class ReportsService {
 
   //<---------- findOne -------------->
   async findOne(id: string) {
-    const rows = await this.prisma.$queryRaw<ReportScoredRow[]>`
-      ${this.scoredReportsCte()}
-      WHERE id = ${id}::uuid
-    `;
+    const rows = await this.withDatabaseRetry(() =>
+      this.prisma.$queryRaw<ReportScoredRow[]>`
+        ${this.scoredReportsCte()}
+        WHERE id = ${id}::uuid
+      `,
+    );
 
     const row = rows[0];
     if (!row) {
@@ -342,10 +399,24 @@ export class ReportsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const [duplicate, primary] = await Promise.all([
-        tx.report.findUnique({ where: { id: duplicateId } }),
-        tx.report.findUnique({ where: { id: primaryId } }),
-      ]);
+      // `FOR UPDATE` — kunci baris duplicate & primary di dalam transaksi
+      // ini, bukan cuma baca biasa (findUnique). Tanpa ini, dua request
+      // merge yang nyaris bersamaan bisa sama-sama baca digabung_ke_id
+      // masih null SEBELUM salah satunya nulis, terus dua-duanya lolos
+      // pengecekan di bawah — race yang bisa bikin vote kepindah dobel
+      // atau salah satu transaksi gagal 500 di tengah jalan. ID diurutin
+      // dulu biar dua transaksi yang tabrakan ngunci baris dengan urutan
+      // yang sama, jadi nggak saling deadlock.
+      const [firstId, secondId] = [duplicateId, primaryId].sort();
+      const locked = await tx.$queryRaw<
+        { id: string; digabung_ke_id: string | null }[]
+      >`
+        SELECT id, digabung_ke_id FROM reports
+        WHERE id IN (${firstId}::uuid, ${secondId}::uuid)
+        FOR UPDATE
+      `;
+      const duplicate = locked.find((row) => row.id === duplicateId);
+      const primary = locked.find((row) => row.id === primaryId);
 
       if (!duplicate) {
         throw new NotFoundException('Laporan yang mau digabung tidak ditemukan');

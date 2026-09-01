@@ -15,8 +15,8 @@ export default function MapReport() {
           </h2>
           <p className="mt-6 max-w-md text-neutral-600">
             Warga menandai lokasi kerusakan langsung di peta saat melapor.
-            Titik itu yang dipakai sistem untuk menghitung jalur vital —
-            apakah dekat sekolah, rumah sakit, atau jalur utama kota — salah
+            Titik itu yang dipakai sistem untuk menghitung jalur vital, 
+            apakah dekat sekolah, rumah sakit, atau jalur utama kota, salah
             satu komponen skor prioritas yang menentukan urutan antrean
             perbaikan.
           </p>
