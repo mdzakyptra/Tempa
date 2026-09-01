@@ -136,7 +136,9 @@ export default function Antrean() {
             type="button"
             onClick={() => setIsHeatmap((current) => !current)}
             aria-pressed={isHeatmap}
-            className="rounded-full border border-black/10 bg-white px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-700 shadow-sm transition-colors hover:bg-neutral-100"
+            // py-2.5 di HP (40px) biar enak dipencet jari; balik ke py-1.5
+            // dari sm ke atas supaya tampilan desktop nggak berubah.
+            className="rounded-full border border-black/10 bg-white px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-700 shadow-sm transition-colors hover:bg-neutral-100 sm:py-1.5"
           >
             {isHeatmap ? 'Lihat titik' : 'Lihat heatmap'}
           </button>

@@ -57,12 +57,9 @@ function LoadingLines({ duration, stepped, onComplete }: LoadingLinesProps) {
 }
 
 //<---------- hasSeenSplash -------------->
-// Diekspor juga — halaman yang pakai LoadingScreen (Beranda, Auth, dst.)
-// pakai ini buat nentuin `showContent` awal (konten baru dimount setelah
-// splash beneran mulai kelar), tanpa duplikat logic sessionStorage-nya.
 // `sessionKey` dikirim per halaman (lihat masing-masing pemanggil) — jadi
 // splash Beranda sama splash Auth independen, saling nggak nge-skip.
-export function hasSeenSplash(sessionKey: string) {
+function hasSeenSplash(sessionKey: string) {
   try {
     return sessionStorage.getItem(sessionKey) === '1'
   } catch {

@@ -116,7 +116,10 @@ export default function Layout() {
           <NavLink to="/"><img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7" /></NavLink>
           <button type="button" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-neutral-700 hover:bg-neutral-100" aria-label="Buka menu"><Menu className="size-5" /></button>
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        {/* overflow-x-hidden wajib eksplisit: per spec CSS, `overflow-y: auto`
+            bikin sumbu X yang `visible` ikut jadi `auto`, jadi di layar sentuh
+            halaman bisa digeser kanan-kiri walau lebihnya cuma sub-pixel. */}
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           <QueueAssistantLiftProvider value={setIsAssistantLifted}>
             <Outlet />
           </QueueAssistantLiftProvider>
