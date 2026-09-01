@@ -1,6 +1,5 @@
 // Mirror apps/backend/src/photos/constants/photo-upload.constant.ts
 export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
-export const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024
 
 // Disesuaikan sama throttle backend: presigned-upload 10/60s, attach 20/60s
 // (photos.controller.ts) — 6 file per laporan masih jauh di bawah limit itu
