@@ -23,41 +23,61 @@ describe('Fail-open layanan eksternal', () => {
   describe('JalurVitalService', () => {
     const service = new JalurVitalService();
 
-    it('balikin false (bukan throw) waktu Overpass nolak', async () => {
+    beforeEach(() => {
+      process.env.MAPBOX_TOKEN = 'token-palsu';
+    });
+
+    it('balikin false (bukan throw) waktu Mapbox nolak', async () => {
       global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 429 });
       await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(false);
     });
 
-    it('balikin false (bukan throw) waktu jaringan mati / timeout', async () => {
-      global.fetch = jest.fn().mockRejectedValue(new Error('TimeoutError'));
+    it('balikin false (bukan throw) waktu jaringan mati', async () => {
+      global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'));
       await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(false);
     });
 
-    it('true kalau ada sekolah/RS/jalan utama di sekitar titik', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ elements: [{ type: 'node', id: 7938730274 }] }),
-      });
-      await expect(service.isJalurVital(-7.5466, 110.8499)).resolves.toBe(true);
+    it('balikin false waktu MAPBOX_TOKEN belum diatur', async () => {
+      delete process.env.MAPBOX_TOKEN;
+      global.fetch = jest.fn();
+      await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(false);
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    it('false kalau sekitarnya kosong', async () => {
+    it('true kalau ada sekolah/RS dekat titik', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ elements: [] }),
+        json: () => Promise.resolve({
+          features: [{ properties: { maki: 'hospital', tilequery: { layer: 'poi_label' } } }],
+        }),
+      });
+      await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(true);
+    });
+
+    it('true di jalan kelas utama, termasuk tertiary (hasil kalibrasi)', async () => {
+      for (const kelas of ['primary', 'tertiary']) {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve({
+            features: [{ properties: { class: kelas, tilequery: { layer: 'road' } } }],
+          }),
+        });
+        await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(true);
+      }
+    });
+
+    it('false kalau cuma jalan kecil / POI biasa di sekitar', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          features: [
+            { properties: { class: 'street', tilequery: { layer: 'road' } } },
+            { properties: { class: 'service', tilequery: { layer: 'road' } } },
+            { properties: { maki: 'restaurant', tilequery: { layer: 'poi_label' } } },
+          ],
+        }),
       });
       await expect(service.isJalurVital(-6.2, 106.8)).resolves.toBe(false);
-    });
-
-    it('query-nya nyantumin radius & kelas jalan yang bener', async () => {
-      const spy = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ elements: [] }) });
-      global.fetch = spy;
-      await service.isJalurVital(-6.2, 106.8);
-      const calls = spy.mock.calls as unknown as [string, { body: URLSearchParams }][];
-      const body = calls[0][1].body.get('data');
-      expect(body).toContain('around:200,-6.2,106.8');
-      expect(body).toContain('motorway|trunk|primary|secondary');
-      expect(body).not.toContain('tertiary');
     });
   });
 

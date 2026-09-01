@@ -1,19 +1,26 @@
-// Klasifikasi jalur vital pakai Overpass API (data OpenStreetMap) — lihat
-// jalur-vital.service.ts. Sempat pakai Mapbox Tilequery, tapi layer POI-nya
-// kosong buat mayoritas titik di Indonesia (diuji di Surakarta: SMA N 8 nggak
-// kebaca sampai radius 500m, padahal OSM punya datanya). OSM juga nggak butuh
-// token.
-export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+// Klasifikasi jalur vital pakai Mapbox Tilequery API — lihat
+// jalur-vital.service.ts.
+//
+// Sempat dicoba Overpass API (data OSM lebih lengkap buat POI Indonesia),
+// tapi ditolak: latensinya nggak stabil (terukur 1,2 / 5,5 / >8 detik buat
+// titik yang sama karena antrean per-IP), jadi skor laporan nggak
+// deterministik — koordinat sama bisa true lalu false. Mirror kumi.systems
+// & private.coffee malah balik 502. Mapbox stabil ~200ms.
+export const JALUR_VITAL_RADIUS_METER = 150;
 
-// Overpass publik kadang lambat (terukur 0,8 detik pas hangat, 12 detik pas
-// cold). Ini dipanggil pas warga submit laporan, jadi dibatasi ketat —
-// lewat batas, jatuh ke fail-open (jalur_vital = false), submit tetap cepat.
-export const JALUR_VITAL_TIMEOUT_MS = 3000;
+// properties.maki dari layer poi_label. Cakupannya tipis di Indonesia
+// (terukur cuma 5% dari 60 laporan nyata yang kedeteksi), jadi ini bonus,
+// bukan andalan — penentu utamanya kelas jalan di bawah.
+export const JALUR_VITAL_POI_MAKI: readonly string[] = ['school', 'college', 'hospital'];
 
-export const JALUR_VITAL_POI_RADIUS_METER = 200;
-export const JALUR_VITAL_ROAD_RADIUS_METER = 150;
-
-// Sengaja nggak masukin `tertiary` — kelas itu terlalu umum, hampir semua
-// laporan bakal kehitung vital dan bobot 20%-nya kehilangan daya pembeda.
-export const JALUR_VITAL_ROAD_CLASS = 'motorway|trunk|primary|secondary';
-export const JALUR_VITAL_AMENITY = 'school|hospital|clinic|university';
+// properties.class dari layer road. Ambangnya dikalibrasi ke 60 laporan
+// nyata di production: motorway/trunk/primary/secondary kena 25% laporan,
+// ditambah tertiary jadi 32% — masih tajam karena mayoritas laporan (48%)
+// ada di kelas `street`. `street` & `service` sengaja di luar daftar.
+export const JALUR_VITAL_ROAD_CLASS: readonly string[] = [
+  'motorway',
+  'trunk',
+  'primary',
+  'secondary',
+  'tertiary',
+];
