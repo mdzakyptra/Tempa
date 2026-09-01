@@ -7,15 +7,29 @@ export interface GeocodeResult {
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org'
 
 //<---------- searchLocationID -------------->
-export async function searchLocationID(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
+// `near` = titik tengah peta yang lagi dilihat. Dipakai buat mem-bias hasil
+// ke sekitar situ (viewbox tanpa `bounded`, jadi tetap boleh ambil hasil di
+// luar kotak kalau nggak ada yang cocok) — tanpa ini, cari "warung makan"
+// bisa nyangkut ke kota lain. Data OSM nggak punya semua toko kecil, jadi
+// pencarian ini bantuan; jalur utamanya tetap klik langsung di peta.
+export async function searchLocationID(
+  query: string,
+  signal?: AbortSignal,
+  near?: { lat: number; lng: number },
+): Promise<GeocodeResult[]> {
   if (!query.trim()) return []
 
   const params = new URLSearchParams({
     q: query,
     format: 'jsonv2',
     countrycodes: 'id',
-    limit: '5',
+    limit: '8',
   })
+
+  if (near) {
+    const d = 0.15 // ~16 km
+    params.set('viewbox', `${near.lng - d},${near.lat + d},${near.lng + d},${near.lat - d}`)
+  }
 
   const response = await fetch(`${NOMINATIM_BASE}/search?${params}`, { signal })
   if (!response.ok) return []
