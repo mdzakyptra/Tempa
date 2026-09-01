@@ -124,7 +124,10 @@ export default function QueueAssistant({ reportId, lifted = false }: QueueAssist
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg p-1 text-neutral-300 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+              // p-2.5 (44px) — di HP chat kebuka fullscreen dan tombol toggle
+              // di bawah ke-hidden, jadi X ini SATU-SATUNYA jalan keluar.
+              // Sebelumnya p-1 (28px), kekecilan buat jari.
+              className="rounded-lg p-2.5 text-neutral-300 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
               aria-label="Tutup chat asisten"
             >
               <X className="size-5" aria-hidden />
