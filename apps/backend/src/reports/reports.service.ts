@@ -11,7 +11,7 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { ListReportsQueryDto } from './dto/list-reports-query.dto';
 import { FindSimilarQueryDto } from './dto/find-similar-query.dto';
 import { MergeReportDto } from './dto/merge-report.dto';
-import { KAWASAN_JALUR_VITAL } from './constants/jalur-vital.constant';
+import { JalurVitalService } from './jalur-vital.service';
 import {
   BOBOT_BAHAYA,
   BOBOT_TERDAMPAK,
@@ -77,10 +77,13 @@ export class ReportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingService: GeminiEmbeddingService,
+    private readonly jalurVitalService: JalurVitalService,
   ) {}
 
   //<---------- create -------------->
   async create(dto: CreateReportDto, userId?: string) {
+    const jalurVital = await this.jalurVitalService.isJalurVital(dto.lat, dto.lng);
+
     const report = await this.prisma.report.create({
       data: {
         id: randomUUID(),
@@ -92,7 +95,7 @@ export class ReportsService {
         jenis_kerusakan: dto.jenis_kerusakan,
         tingkat_bahaya: dto.tingkat_bahaya,
         estimasi_terdampak: dto.estimasi_terdampak,
-        jalur_vital: KAWASAN_JALUR_VITAL.includes(dto.kawasan),
+        jalur_vital: jalurVital,
         dibuat_oleh: userId,
       },
     });
