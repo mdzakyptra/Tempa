@@ -25,12 +25,33 @@ export async function searchLocationID(query: string, signal?: AbortSignal): Pro
 }
 
 //<---------- reverseGeocodeID -------------->
+// Ngembaliin nama kawasan level kelurahan/kecamatan dari titik yang dipilih
+// di map — bukan alamat lengkap — biar field Kawasan konsisten antar warga
+// (sama titik = sama nama), gak tergantung warga ngetik sendiri.
 export async function reverseGeocodeID(lat: number, lng: number): Promise<string> {
-  const params = new URLSearchParams({ lat: String(lat), lon: String(lng), format: 'jsonv2' })
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lng),
+    format: 'jsonv2',
+    addressdetails: '1',
+  })
 
   const response = await fetch(`${NOMINATIM_BASE}/reverse?${params}`)
   if (!response.ok) throw new Error('Reverse geocode failed')
 
-  const data = (await response.json()) as { display_name?: string }
-  return data.display_name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+  const data = (await response.json()) as {
+    display_name?: string
+    address?: {
+      village?: string
+      suburb?: string
+      city_district?: string
+      town?: string
+      city?: string
+    }
+  }
+
+  const address = data.address
+  const kawasan = address?.village ?? address?.suburb ?? address?.city_district ?? address?.town ?? address?.city
+
+  return kawasan ?? data.display_name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`
 }
