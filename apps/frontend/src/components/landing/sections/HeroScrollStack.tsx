@@ -104,9 +104,14 @@ export default function HeroScrollStack() {
   const markerX = useMotionValue(50);
   const markerY = useMotionValue(50);
   const [introVisible, setIntroVisible] = useState(true);
+  const [whiteTransitionLocked, setWhiteTransitionLocked] = useState(false);
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     progressRef.current = v;
     setIntroVisible(v < 0.08);
+    setWhiteTransitionLocked((current) => {
+      const next = v >= 0.8;
+      return current === next ? current : next;
+    });
   });
 
   const [isDesktop, setIsDesktop] = useState(false);
@@ -146,7 +151,7 @@ export default function HeroScrollStack() {
     <section id="top" ref={ref} className="relative" style={{ height: "500vh" }}>
       <div
         onMouseMove={onMove}
-        className="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden px-6"
+        className="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-white px-6"
       >
         <HeroMapTexture />
         <motion.div style={{ x: globeX }} className="absolute inset-0">
@@ -223,6 +228,8 @@ export default function HeroScrollStack() {
             />
           </div>
         </motion.div>
+
+        <motion.div animate={{ opacity: whiteTransitionLocked ? 1 : 0 }} transition={{ duration: 0.35, ease: "easeOut" }} className="pointer-events-none absolute inset-0 z-[100] bg-white" />
       </div>
     </section>
   );
