@@ -29,7 +29,7 @@ export default function WorkStack() {
   }, []);
 
   return (
-    <section id="work" ref={sectionRef} className="relative z-10 overflow-hidden bg-white px-5 py-10 text-[#102c45] sm:px-8 md:px-12 md:py-16 lg:min-h-[720px] lg:px-16 lg:py-14">
+    <section id="work" ref={sectionRef} className="relative z-10 -mt-[75vh] overflow-hidden bg-white px-5 py-10 text-[#102c45] sm:px-8 md:px-12 md:py-16 lg:min-h-[720px] lg:px-16 lg:py-14">
       <div className="mx-auto grid max-w-[1440px] gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,.52fr)] lg:gap-x-16">
         <div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-serif text-[clamp(2.9rem,6.1vw,6.5rem)] leading-[.86] tracking-[-0.065em]">
