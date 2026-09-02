@@ -80,6 +80,15 @@
   }
 }
 
+@keyframes map-report-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-scroll-horizontal {
   animation: scroll-horizontal var(--scroll-duration) linear infinite;
 }
@@ -90,6 +99,10 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.7s ease-out both;
+}
+
+.map-report-ring {
+  animation: map-report-ring-spin 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animation-delay-200 {
