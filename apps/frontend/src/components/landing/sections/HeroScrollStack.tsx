@@ -13,7 +13,6 @@ import { BEATS, beatRange } from "../backgrounds/globe-story/beats";
 import { StepRail, ScoreCard, ScoreCardMobile, VoteCounter, VoteCounterMobile } from "./hero-overlays";
 import SplitText from "../animations/SplitText";
 import FlipWords from "../animations/FlipWords";
-import MagneticButton from "../animations/MagneticButton";
 
 // react-three-fiber + three (~230KB gzip) gak boleh ikut blokir first paint
 // landing page — splash LoadingScreen udah nutup ~2.6 detik duluan, cukup
@@ -126,8 +125,6 @@ export default function HeroScrollStack() {
   // globe instead, so it stays centered from the start.
   const globeX = useTransform(scrollYProgress, [0, 0.08], isDesktop ? ["-24%", "0%"] : ["0%", "0%"]);
   const hintOpacity = useTransform(scrollYProgress, [0, 0.04], [1, 0]);
-  const ctaOpacity = useTransform(scrollYProgress, [0.93, 1], [0, 1]);
-  const ctaY = useTransform(scrollYProgress, [0.93, 1], [16, 0]);
 
   // mouse parallax on the intro headline
   const mx = useMotionValue(0);
@@ -213,26 +210,6 @@ export default function HeroScrollStack() {
         <ScoreCard progress={scrollYProgress} markerX={markerX} markerY={markerY} />
         <VoteCounter progress={scrollYProgress} markerX={markerX} markerY={markerY} />
         <StepRail progress={scrollYProgress} />
-
-        <motion.div
-          style={{ opacity: ctaOpacity, y: ctaY }}
-          className="pointer-events-none absolute bottom-16 left-1/2 z-10 -translate-x-1/2"
-        >
-          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-4">
-            <MagneticButton
-              href="/lapor-baru"
-              className="rounded-full bg-black px-8 py-4 text-sm font-semibold text-white"
-            >
-              Lapor Kerusakan →
-            </MagneticButton>
-            <MagneticButton
-              href="#work"
-              className="rounded-full border border-black/25 px-8 py-4 text-sm font-semibold text-black"
-            >
-              Lihat Skor
-            </MagneticButton>
-          </div>
-        </motion.div>
 
         <motion.div
           style={{ opacity: hintOpacity }}
