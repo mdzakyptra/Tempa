@@ -185,7 +185,7 @@ function ScoreConnectionLines({
     >
       {targets.map((target, index) => (
         <ScoreConnectionLine
-          key={`${target.x}-${target.y}`}
+          key={index}
           markerX={markerX}
           markerY={markerY}
           target={target}

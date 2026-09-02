@@ -5,6 +5,7 @@ import {
   clusterZones,
   INDONESIA_CENTER,
   INITIAL_ZOOM,
+  MIN_ZOOM,
   YAW_RANGE,
   type GlobeZone,
   type GlobeZoneCluster,
@@ -26,6 +27,11 @@ interface WireframeDottedGlobeProps {
   zones?: GlobeZone[]
   /** Called instead of onLocationPick when the click lands on a zone cluster. */
   onZoneClick?: (cluster: GlobeZoneCluster) => void
+  /** Sphere radius as a multiple of the base radius (container/2.5). Default 1.6 fills the frame
+   *  edge-to-edge; drop below ~1.25 to keep the whole globe inside a small container. */
+  zoom?: number
+  /** Interaction hint pill. Turn off where the globe is decorative or the box is too narrow for it. */
+  showHint?: boolean
 }
 
 //<---------- clusterColor -------------->
@@ -51,6 +57,8 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
       onLocationPick,
       zones = [],
       onZoneClick,
+      zoom = INITIAL_ZOOM,
+      showHint = true,
     },
     ref,
   ) {
@@ -84,7 +92,16 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
     const suspendAutoRotateRef = useRef(false)
     const autoRotateDirRef = useRef<1 | -1>(1)
 
-    useGlobeZoomHandle({ ref, canvasRef, projectionRef, baseRadiusRef, rotationRef, renderRef, suspendAutoRotateRef })
+    useGlobeZoomHandle({
+      ref,
+      canvasRef,
+      projectionRef,
+      baseRadiusRef,
+      rotationRef,
+      renderRef,
+      suspendAutoRotateRef,
+      initialZoom: zoom,
+    })
 
     useEffect(() => {
       const canvas = canvasRef.current
@@ -103,7 +120,7 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
 
       const projection = d3
         .geoOrthographic()
-        .scale(radius * INITIAL_ZOOM)
+        .scale(radius * zoom)
         .translate([width / 2, height / 2])
         .clipAngle(90)
       projectionRef.current = projection
@@ -179,6 +196,7 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
         interactingRef,
         zonesRef,
         onZoneClickRef,
+        minZoom: Math.min(MIN_ZOOM, zoom),
       })
 
       const AUTO_ROTATE_DEG_PER_SEC = 4
@@ -191,7 +209,7 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
 
         // Only auto-rotate at the untouched default view — any zoom (wheel or
         // programmatic) holds still so the dots stop drifting under the cursor.
-        const atDefaultZoom = Math.abs(projection.scale() - radius * INITIAL_ZOOM) < 1
+        const atDefaultZoom = Math.abs(projection.scale() - radius * zoom) < 1
         if (atDefaultZoom && !interactingRef.current && !suspendAutoRotateRef.current) {
           let yaw = rotationRef.current[0] + autoRotateDirRef.current * AUTO_ROTATE_DEG_PER_SEC * (dt / 1000)
           if (yaw >= maxYaw) {
@@ -213,7 +231,7 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
         cancelAnimationFrame(frameId)
         detachInteractions()
       }
-    }, [width, height])
+    }, [width, height, zoom])
 
     useEffect(() => {
       const cached = getCachedLandData()
@@ -248,10 +266,14 @@ const WireframeDottedGlobe = forwardRef<WireframeDottedGlobeHandle, WireframeDot
 
     return (
       <div ref={wrapperRef} className={`relative overflow-hidden ${className}`}>
-        <canvas ref={canvasRef} className="cursor-pointer" />
-        <div className="absolute bottom-4 left-4 text-xs text-foreground/70 px-2 py-1 rounded-md bg-white/80 border border-border backdrop-blur">
-          {isLoading ? 'Memuat peta…' : 'Klik lokasi • Geser untuk putar • Scroll untuk zoom'}
-        </div>
+        {/* touch-pan-y: scroll vertikal halaman tetap milik browser, sisanya (drag 1 jari,
+            pinch 2 jari) ditangani attachGlobeInteractions. */}
+        <canvas ref={canvasRef} className="cursor-pointer touch-pan-y" />
+        {(showHint || isLoading) && (
+          <div className="absolute bottom-4 left-4 text-xs text-foreground/70 px-2 py-1 rounded-md bg-white/80 border border-border backdrop-blur">
+            {isLoading ? 'Memuat peta…' : 'Klik lokasi • Geser untuk putar • Scroll untuk zoom'}
+          </div>
+        )}
       </div>
     )
   },

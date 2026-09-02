@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import WireframeDottedGlobe, {
   type WireframeDottedGlobeHandle,
@@ -13,6 +13,7 @@ import type { CityMapMarker, CityMapZone } from '@/components/city-map'
 // `mapTarget` di bawah), jadi lazy-load aman, gak nunda first paint.
 const CityMap = lazy(() => import('@/components/city-map').then((m) => ({ default: m.CityMap })))
 import { searchLocationID, type GeocodeResult } from '@/lib/geocode'
+import { GlobeSearchPanel, MapPhaseControls } from './globe-map-panels'
 import { ALL_REPORTS_PATH, apiFetch } from '@/lib/api'
 import type { ReportListItem } from '@/components/report-card'
 
@@ -31,8 +32,16 @@ const TRANSITION_MS = 1200
 const ZOOM_DIVE_MULTIPLIER = 14
 const ZONE_ZOOM_MULTIPLIER = 6
 
+interface GlobeMapTransitionProps {
+  /** Dipakai waktu globe ditaruh di kotak kecil (mis. bingkai galeri di CityCoordinates):
+   *  kolom pencarian & hint disembunyikan, dan zoom dikecilkan supaya bola utuh masuk frame. */
+  compact?: boolean
+}
+
+const COMPACT_ZOOM = 1.05
+
 //<---------- GlobeMapTransition -------------->
-export default function GlobeMapTransition() {
+export default function GlobeMapTransition({ compact = false }: GlobeMapTransitionProps) {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>('globe')
   const [mapTarget, setMapTarget] = useState<MapTarget | null>(null)
@@ -204,36 +213,18 @@ export default function GlobeMapTransition() {
 
   return (
     <div className="relative mx-auto w-full max-w-md">
-      {phase !== 'map' && (
-        <div className="relative z-10 mb-4">
-          <input
-            value={query}
-            onChange={(event) => {
-              const value = event.target.value
-              setQuery(value)
-              if (value.trim().length < 3) setResults([])
-              else setSearching(true)
-            }}
-            placeholder="Cari kawasan, mis. Menteng, Jakarta Pusat"
-            className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm"
-          />
-          {searching && <p className="mt-2 text-xs text-neutral-500">Mencari…</p>}
-          {results.length > 0 && (
-            <ul className="mt-2 divide-y divide-black/10 overflow-hidden rounded-lg border border-black/15 bg-white">
-              {results.map((result) => (
-                <li key={`${result.lat}-${result.lng}`}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectResult(result)}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50"
-                  >
-                    {result.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      {phase !== 'map' && !compact && (
+        <GlobeSearchPanel
+          query={query}
+          onQueryChange={(value) => {
+            setQuery(value)
+            if (value.trim().length < 3) setResults([])
+            else setSearching(true)
+          }}
+          searching={searching}
+          results={results}
+          onSelect={handleSelectResult}
+        />
       )}
 
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
@@ -247,6 +238,8 @@ export default function GlobeMapTransition() {
             onLocationPick={handleGlobeClick}
             zones={zones}
             onZoneClick={handleZoneClick}
+            zoom={compact ? COMPACT_ZOOM : undefined}
+            showHint={!compact}
           />
         </div>
 
@@ -272,36 +265,13 @@ export default function GlobeMapTransition() {
       </div>
 
       {phase === 'map' && (
-        <div className="mt-4 space-y-2 text-sm">
-          <div className="flex items-center justify-between rounded-lg border border-black/10 bg-neutral-50 px-3 py-2">
-            <span className="flex items-center gap-2 font-medium">
-              {openedKawasan && (
-                <button
-                  type="button"
-                  onClick={handleCollapseKawasan}
-                  aria-label="Kembali ke semua kawasan"
-                  className="text-neutral-500 hover:text-neutral-900"
-                >
-                  ←
-                </button>
-              )}
-              {openedKawasan ?? mapTarget?.kawasan ?? 'Semua kawasan'}
-            </span>
-            <Link
-              to={
-                openedKawasan ?? mapTarget?.kawasan
-                  ? `/antrean?kawasan=${encodeURIComponent(openedKawasan ?? mapTarget?.kawasan ?? '')}`
-                  : '/antrean'
-              }
-              className="font-medium text-blue-600 hover:underline"
-            >
-              Lihat semua di Antrean →
-            </Link>
-          </div>
-          <button type="button" onClick={handleReset} className="text-neutral-500 hover:text-neutral-900">
-            ← Lihat globe lagi
-          </button>
-        </div>
+        <MapPhaseControls
+          compact={compact}
+          openedKawasan={openedKawasan}
+          kawasan={mapTarget?.kawasan}
+          onCollapse={handleCollapseKawasan}
+          onReset={handleReset}
+        />
       )}
     </div>
   )
