@@ -169,7 +169,7 @@ export default function HeroScrollStack() {
         {introVisible && (
           <motion.div
             style={{ opacity: introOpacity, scale: introScale }}
-            className="pointer-events-none absolute inset-x-0 inset-y-0 z-10 flex origin-top flex-col items-center justify-between px-6 pb-20 pt-16 text-center md:inset-x-auto md:inset-y-0 md:right-6 md:top-0 md:w-full md:max-w-2xl md:origin-right md:items-end md:justify-center md:px-0 md:py-0 md:text-right lg:right-16 lg:max-w-3xl"
+            className="pointer-events-none absolute inset-x-0 inset-y-0 z-10 flex origin-top flex-col items-center justify-between px-6 pb-20 pt-28 text-center md:inset-x-auto md:inset-y-0 md:right-6 md:top-0 md:w-full md:max-w-2xl md:origin-right md:items-end md:justify-center md:px-0 md:py-0 md:text-right lg:right-16 lg:max-w-3xl"
           >
             
 

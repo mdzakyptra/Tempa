@@ -101,7 +101,7 @@ export default function Antrean() {
     .map((r) => ({ id: r.id, lat: r.lat, lng: r.lng, label: r.judul, weight: r.skor }))
 
   return (
-    <div className="h-full overflow-hidden bg-neutral-100 p-3 text-black sm:p-5">
+    <div className="h-full overflow-hidden bg-[url('/hero-sky-background.png')] bg-cover bg-center p-3 text-black sm:p-5">
       <div className="mx-auto mb-3 max-w-[1600px] px-1 sm:px-0">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-500">Aspiraku</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Peta prioritas laporan</h1>

@@ -13,7 +13,7 @@ export default function LaporBaru() {
   const navigate = useNavigate()
 
   return (
-    <main className="min-h-[calc(100svh-4rem)] bg-neutral-50 px-4 py-8 sm:px-6 sm:py-12">
+    <main className="min-h-[calc(100svh-4rem)] bg-[url('/hero-sky-background.png')] bg-cover bg-fixed bg-center px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 max-w-2xl sm:mb-10">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">Antrean Kota / Laporan warga</p>
