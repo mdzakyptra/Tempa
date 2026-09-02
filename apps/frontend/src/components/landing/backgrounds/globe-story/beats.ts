@@ -41,6 +41,8 @@ export const BEATS: Beat[] = [
 export const INTRO_END = 0.14;
 
 // Hero's sticky pin releases at 0.8 (container 500vh, sticky item 100vh tall).
+// WorkStack ditarik naik (-mt-[75vh]) supaya mulai nutupin Hero tepat di 0.8 —
+// tanpa itu, 0.8..1 cuma layar putih polos selama ~1 layar penuh.
 // Beats must finish inside [INTRO_END, BEATS_END] so the last beat isn't
 // still fading in once Hero starts unpinning and scrolling away.
 export const BEATS_END = 0.8;
