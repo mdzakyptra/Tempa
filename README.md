@@ -1,3 +1,8 @@
+
+<div align="center">
+<img width="2534" height="1408" alt="image" src="https://github.com/user-attachments/assets/e7362c53-d937-4de8-bd95-b780ab02e4d0" />
+</div>  
+
 # Aspiraku — Antrean Kota
 
 Aspiraku adalah aplikasi pelaporan kerusakan infrastruktur publik yang membuat alasan di balik urutan penanganan dapat dilihat warga. Laporan tidak hanya diurutkan dari waktu kirim, tetapi dari skor prioritas yang memadukan risiko, dampak, waktu tunggu, dan relevansi jalur vital.
