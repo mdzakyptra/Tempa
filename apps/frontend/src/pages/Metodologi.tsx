@@ -61,7 +61,7 @@ function MethodCard({ component }: { component: (typeof SCORE_COMPONENTS)[number
 //<---------- Metodologi ------------>
 export default function Metodologi() {
   return (
-    <div className="min-h-full bg-[#f6f5f1] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+    <div className="min-h-full bg-[url('/hero-sky-background.png')] bg-cover bg-fixed bg-center px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
       <main className="mx-auto max-w-6xl">
         <section className="relative isolate overflow-hidden rounded-[2rem] border border-black/8 bg-white px-6 py-8 shadow-[0_12px_35px_-25px_rgba(0,0,0,.25)] sm:rounded-[2.5rem] sm:px-10 sm:py-12 lg:px-14 lg:py-16">
           <DotField />

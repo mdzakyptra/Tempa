@@ -28,7 +28,7 @@ interface SidebarProps {
 //<---------- Sidebar ------------>
 function Sidebar({ collapsed, onToggle, onNavigate, navItems, user, onLogout }: SidebarProps) {
   return (
-    <aside className={`flex h-full flex-col border-r border-black/10 bg-white transition-[width] duration-300 ${collapsed ? 'w-[76px]' : 'w-64'}`}>
+    <aside className={`flex h-full flex-col border-r border-black/10 bg-white/42 backdrop-blur-xl transition-[width] duration-300 ${collapsed ? 'w-[76px]' : 'w-64'}`}>
       <div className="flex h-20 items-center border-b border-black/10 px-4">
         <NavLink to="/" onClick={onNavigate} className="min-w-0 flex-1 overflow-hidden">
           <img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7 w-auto max-w-none" />
@@ -107,12 +107,12 @@ export default function Layout() {
   }
 
   return (
-    <div className="font-display flex h-dvh overflow-hidden bg-neutral-50 text-black">
+    <div className="font-display flex h-dvh overflow-hidden bg-[url('/hero-sky-background.png')] bg-cover bg-fixed bg-center text-black">
       <div className="hidden h-full shrink-0 md:block">
         <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} navItems={navItems} user={userQuery.data} onLogout={handleLogout} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-black/10 bg-white px-4 md:hidden">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-black/10 bg-white/42 px-4 backdrop-blur-xl md:hidden">
           <NavLink to="/"><img src="/aspiraku-wordmark.png" alt="Aspiraku" className="h-7" /></NavLink>
           <button type="button" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-neutral-700 hover:bg-neutral-100" aria-label="Buka menu"><Menu className="size-5" /></button>
         </header>
