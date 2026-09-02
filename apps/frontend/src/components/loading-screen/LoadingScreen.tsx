@@ -138,12 +138,14 @@ export default function LoadingScreen({
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: 'easeInOut' }}
-          className="fixed inset-0 z-[1000] flex flex-col items-center justify-center gap-6 bg-white"
+          className="fixed inset-0 z-[1000] flex flex-col items-center justify-center gap-6 overflow-hidden bg-white"
         >
+          <img src="/hero-sky-background.png" alt="" className="pointer-events-none absolute inset-0 size-full object-cover" />
+
           <motion.img
             src="/aspiraku-wordmark.png"
             alt="Aspiraku"
-            className="h-7 w-auto"
+            className="relative z-10 h-7 w-auto"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
