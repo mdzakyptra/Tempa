@@ -81,6 +81,9 @@ interface AttachGlobeInteractionsArgs {
   interactingRef?: { current: boolean }
   zonesRef?: { current: GlobeZone[] }
   onZoneClickRef?: { current?: (cluster: GlobeZoneCluster) => void }
+  /** Scroll-out floor. Defaults to MIN_ZOOM; a compact globe passes its own smaller initial zoom
+   *  so wheeling out doesn't snap the sphere back to bigger-than-its-frame. */
+  minZoom?: number
 }
 
 //<---------- attachGlobeInteractions -------------->
@@ -96,15 +99,24 @@ export function attachGlobeInteractions({
   interactingRef,
   zonesRef,
   onZoneClickRef,
+  minZoom = MIN_ZOOM,
 }: AttachGlobeInteractionsArgs) {
-  const handleMouseDown = (event: MouseEvent) => {
+  // Dua jari = pinch, bukan drag rotasi. Flag ini bikin pointer drag berhenti
+  // begitu jari kedua turun, jadi bola gak ikut muter waktu user nge-zoom.
+  let pinchStartDistance = 0
+  let pinchStartScale = 0
+  let pinching = false
+
+  const handlePointerDown = (event: PointerEvent) => {
+    if (pinching) return
     if (interactingRef) interactingRef.current = true
     const startX = event.clientX
     const startY = event.clientY
     const startRotation: [number, number, number] = [...rotationRef.current]
     let maxMovement = 0
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (pinching) return
       const sensitivity = 0.5
       const dx = moveEvent.clientX - startX
       const dy = moveEvent.clientY - startY
@@ -125,12 +137,13 @@ export function attachGlobeInteractions({
       render()
     }
 
-    const handleMouseUp = (upEvent: MouseEvent) => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('pointerup', handlePointerUp)
+      document.removeEventListener('pointercancel', handlePointerUp)
       if (interactingRef) interactingRef.current = false
 
-      if (maxMovement < CLICK_DRAG_THRESHOLD) {
+      if (maxMovement < CLICK_DRAG_THRESHOLD && !pinching) {
         const rect = canvas.getBoundingClientRect()
         const [x, y] = [upEvent.clientX - rect.left, upEvent.clientY - rect.top]
 
@@ -151,23 +164,63 @@ export function attachGlobeInteractions({
       }
     }
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('pointermove', handlePointerMove)
+    document.addEventListener('pointerup', handlePointerUp)
+    document.addEventListener('pointercancel', handlePointerUp)
+  }
+
+  //<---------- zoomBy -------------->
+  const zoomBy = (factor: number) => {
+    projection.scale(clamp(projection.scale() * factor, radius * minZoom, radius * MAX_ZOOM))
+    render()
+  }
+
+  const touchDistance = (touches: TouchList) =>
+    Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
+
+  const handleTouchStart = (event: TouchEvent) => {
+    if (event.touches.length !== 2) return
+    pinching = true
+    pinchStartDistance = touchDistance(event.touches)
+    pinchStartScale = projection.scale()
+    if (interactingRef) interactingRef.current = true
+  }
+
+  const handleTouchMove = (event: TouchEvent) => {
+    if (!pinching || event.touches.length !== 2 || pinchStartDistance === 0) return
+    // Canvas-nya touch-action: pan-y, jadi scroll vertikal halaman tetap jalan;
+    // gestur dua jari yang sampai ke sini memang buat globe, bukan buat page.
+    event.preventDefault()
+    const nextScale = pinchStartScale * (touchDistance(event.touches) / pinchStartDistance)
+    projection.scale(clamp(nextScale, radius * minZoom, radius * MAX_ZOOM))
+    render()
+  }
+
+  const handleTouchEnd = (event: TouchEvent) => {
+    if (event.touches.length >= 2) return
+    pinching = false
+    pinchStartDistance = 0
+    if (interactingRef) interactingRef.current = false
   }
 
   const handleWheel = (event: WheelEvent) => {
     event.preventDefault()
-    const factor = event.deltaY > 0 ? 0.9 : 1.1
-    const newScale = clamp(projection.scale() * factor, radius * MIN_ZOOM, radius * MAX_ZOOM)
-    projection.scale(newScale)
-    render()
+    zoomBy(event.deltaY > 0 ? 0.9 : 1.1)
   }
 
-  canvas.addEventListener('mousedown', handleMouseDown)
+  canvas.addEventListener('pointerdown', handlePointerDown)
   canvas.addEventListener('wheel', handleWheel)
+  canvas.addEventListener('touchstart', handleTouchStart, { passive: true })
+  canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+  canvas.addEventListener('touchend', handleTouchEnd)
+  canvas.addEventListener('touchcancel', handleTouchEnd)
 
   return () => {
-    canvas.removeEventListener('mousedown', handleMouseDown)
+    canvas.removeEventListener('pointerdown', handlePointerDown)
     canvas.removeEventListener('wheel', handleWheel)
+    canvas.removeEventListener('touchstart', handleTouchStart)
+    canvas.removeEventListener('touchmove', handleTouchMove)
+    canvas.removeEventListener('touchend', handleTouchEnd)
+    canvas.removeEventListener('touchcancel', handleTouchEnd)
   }
 }

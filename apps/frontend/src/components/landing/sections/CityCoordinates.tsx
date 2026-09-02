@@ -15,7 +15,11 @@ export default function CityCoordinates() {
         <ScrollReveal direction="up" delay={0.1}>
           <div className="relative mx-auto aspect-square w-full max-w-[420px]">
             <img src="/globe-gallery-frame.png" alt="Bingkai galeri untuk globe peta" className="absolute inset-0 size-full object-contain" />
-            <div className="absolute inset-[17%] [&>div>div:first-child]:hidden"><GlobeMapTransition /></div>
+            {/* Persentase diukur dari lubang gelap di globe-gallery-frame.png (209,204)-(1033,1033)
+                dari kanvas 1254px — bukan inset seragam, bingkainya memang gak simetris. */}
+            <div className="absolute bottom-[17.5%] left-[16.7%] right-[17.5%] top-[16.3%]">
+              <GlobeMapTransition compact />
+            </div>
           </div>
         </ScrollReveal>
 
