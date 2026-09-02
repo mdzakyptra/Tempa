@@ -6,6 +6,7 @@ import Navbar from '../components/landing/sections/Navbar'
 import Hero from '../components/landing/sections/Hero'
 import WorkStack from '../components/landing/sections/WorkStack'
 import MapReport from '../components/landing/sections/MapReport'
+import CityCoordinates from '../components/landing/sections/CityCoordinates'
 import Footer from '../components/landing/sections/Footer'
 import HabitFaqScroller from '../components/landing/sections/HabitFaqScroller'
 import LoadingScreen from '../components/loading-screen/LoadingScreen'
@@ -37,6 +38,7 @@ export default function Beranda() {
             <Hero />
             <WorkStack />
             <MapReport />
+            <CityCoordinates />
             <HabitFaqScroller />
           </main>
 

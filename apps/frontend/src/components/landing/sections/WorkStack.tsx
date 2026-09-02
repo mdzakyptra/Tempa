@@ -33,7 +33,7 @@ export default function WorkStack() {
       <div className="mx-auto grid max-w-[1440px] gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,.52fr)] lg:gap-x-16">
         <div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-serif text-[clamp(2.9rem,6.1vw,6.5rem)] leading-[.86] tracking-[-0.065em]">
-            <span>Warga melapor,</span><img src="/city-report-marker.png" alt="" className="h-[.78em] w-[1.25em] object-contain lg:h-[.48em] lg:w-[.82em]" /><span>kota bergerak</span>
+            <span>Warga melapor,</span><img src="/city-report-marker.png" alt="" className="h-[1.15em] w-[1.85em] object-contain lg:h-[0.72em] lg:w-[1.15em]" /><span>kota bergerak</span>
           </div>
           <div className="ml-[48%] mt-3 hidden rotate-[-4deg] font-serif text-xl italic text-[#e45b22] md:block">Mulai dari satu laporan</div>
         </div>
