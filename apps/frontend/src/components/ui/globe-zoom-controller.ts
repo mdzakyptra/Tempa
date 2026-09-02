@@ -23,6 +23,8 @@ interface UseGlobeZoomHandleArgs {
   rotationRef: RefObject<[number, number, number]>
   renderRef: RefObject<() => void>
   suspendAutoRotateRef: RefObject<boolean>
+  /** Zoom `reset()` returns to — mirrors the globe's own initial zoom. */
+  initialZoom?: number
 }
 
 //<---------- useGlobeZoomHandle -------------->
@@ -34,6 +36,7 @@ export function useGlobeZoomHandle({
   rotationRef,
   renderRef,
   suspendAutoRotateRef,
+  initialZoom = INITIAL_ZOOM,
 }: UseGlobeZoomHandleArgs) {
   useImperativeHandle(ref, () => {
     const animateTo = (
@@ -78,7 +81,7 @@ export function useGlobeZoomHandle({
 
     return {
       zoomIn,
-      reset: (options = {}) => zoomIn(INDONESIA_CENTER, { ...options, scaleMultiplier: INITIAL_ZOOM }),
+      reset: (options = {}) => zoomIn(INDONESIA_CENTER, { ...options, scaleMultiplier: initialZoom }),
     }
   })
 }
