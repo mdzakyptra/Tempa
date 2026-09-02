@@ -8,11 +8,11 @@ import {
   type MotionValue,
 } from "motion/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import HeroMapTexture from "../backgrounds/HeroMapTexture";
 import { BEATS, beatRange } from "../backgrounds/globe-story/beats";
 import { StepRail, ScoreCard, ScoreCardMobile, VoteCounter, VoteCounterMobile } from "./hero-overlays";
 import SplitText from "../animations/SplitText";
-import FlipWords from "../animations/FlipWords";
 
 // react-three-fiber + three (~230KB gzip) gak boleh ikut blokir first paint
 // landing page — splash LoadingScreen udah nutup ~2.6 detik duluan, cukup
@@ -125,10 +125,9 @@ export default function HeroScrollStack() {
 
   const introOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
   const introScale = useTransform(scrollYProgress, [0, 0.08], [1, 0.9]);
-  // globe drifts in from the left on desktop to clear space for the
-  // right-aligned intro text; on mobile the text sits above/below the
-  // globe instead, so it stays centered from the start.
-  const globeX = useTransform(scrollYProgress, [0, 0.08], isDesktop ? ["-24%", "0%"] : ["0%", "0%"]);
+  // Globe starts centered over the ASPIRAKU wordmark, then remains centered
+  // when the scroll narrative begins.
+  const globeX = useTransform(scrollYProgress, [0, 0.08], ["0%", "0%"]);
   const hintOpacity = useTransform(scrollYProgress, [0, 0.04], [1, 0]);
 
   // mouse parallax on the intro headline
@@ -148,13 +147,13 @@ export default function HeroScrollStack() {
   }
 
   return (
-    <section id="top" ref={ref} className="relative" style={{ height: "500vh" }}>
+    <section id="hero-stack" ref={ref} className="relative" style={{ height: "500vh" }}>
       <div
         onMouseMove={onMove}
         className="sticky top-0 flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-white px-6"
       >
         <HeroMapTexture />
-        <motion.div style={{ x: globeX }} className="absolute inset-0">
+        <motion.div style={{ x: globeX }} className="absolute inset-0 z-10">
           <Suspense fallback={null}>
             <GlobeStoryScene
               progressRef={progressRef}
@@ -172,39 +171,74 @@ export default function HeroScrollStack() {
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent" />
 
         {introVisible && (
+          <motion.p
+            style={{ opacity: introOpacity, scale: introScale }}
+            className="pointer-events-none absolute inset-x-0 top-20 z-0 select-none overflow-hidden text-center text-[17vw] font-black leading-none tracking-[-0.11em] text-black/[0.16] sm:top-7 sm:text-[15vw]"
+            aria-hidden
+          >
+            ASPIRAKU
+          </motion.p>
+        )}
+
+        {introVisible && (
           <motion.div
             style={{ opacity: introOpacity, scale: introScale }}
-            className="pointer-events-none absolute inset-x-0 inset-y-0 z-10 flex origin-top flex-col items-center justify-between px-6 pb-20 pt-28 text-center md:inset-x-auto md:inset-y-0 md:right-6 md:top-0 md:w-full md:max-w-2xl md:origin-right md:items-end md:justify-center md:px-0 md:py-0 md:text-right lg:right-16 lg:max-w-3xl"
+            className="absolute inset-0 z-20 mx-auto flex w-full max-w-7xl origin-bottom flex-col justify-between px-4 pb-7 sm:px-1 sm:pb-9 lg:px-1"
           >
-            
+            <div className="absolute inset-x-4 top-[23vh] flex items-start justify-between gap-6 sm:inset-x-1 sm:top-[30vh]">
+              <p className="max-w-48 text-xs font-medium leading-relaxed text-black/65 sm:max-w-60 sm:text-sm">
+                Ruang bersama untuk memantau dan mendorong perbaikan kota.
+              </p>
+              <p className="hidden max-w-52 text-right text-xs leading-relaxed text-black/55 sm:block">
+                LAPORAN WARGA<br />TERHUBUNG SECARA TERBUKA
+              </p>
+            </div>
 
-            <motion.h1
-              style={{ x: headX, y: headY }}
-              className="max-w-xs text-4xl font-black leading-[0.95] tracking-tighter sm:max-w-xl sm:text-5xl md:max-w-2xl md:text-4xl lg:max-w-3xl lg:text-5xl xl:text-6xl"
-            >
-              <span className="block md:whitespace-nowrap">
-                <SplitText by="chars" text="Antrean perbaikan kota," />
-              </span>
-              <span className="text-stroke">
-                <SplitText by="chars" text="kini" delay={0.35} />{" "}
-              </span>
-              <FlipWords
-                words={["terlihat", "transparan", "adil", "real-time"]}
-                className="italic"
-                shiny
-              />
-            </motion.h1>
+            <div className="relative mt-auto pt-0 sm:pt-[42vh]">
+              <div className="max-w-sm">
+                <p className="mb-3 text-[0.65rem] font-bold tracking-[0.2em] text-[#177a78]">ASPIRASI UNTUK KOTA</p>
+                <motion.h1
+                  style={{ x: headX, y: headY }}
+                  className="max-w-xs text-balance text-2xl font-bold leading-[0.96] tracking-[-0.06em] sm:max-w-sm sm:text-5xl"
+                >
+                  <SplitText by="chars" text="Suara warga, arah perubahan kota." />
+                </motion.h1>
+              </div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1, duration: 0.8 }}
-              className="mt-8 max-w-xl text-balance text-lg text-neutral-600 md:max-w-md"
-            >
-              Warga melapor, lihat skor prioritas laporannya, dukung laporan
-              orang lain, dan tanya langsung ke AI kenapa satu laporan
-              didahulukan dari yang lain.
-            </motion.p>
+              <div className="mt-5 flex items-end justify-between gap-4 sm:mt-9 sm:gap-6">
+                <div className="flex gap-6 text-xs text-black/60 sm:gap-12">
+                  <p><span className="block text-2xl font-bold leading-none text-black sm:text-4xl">20K+</span><span className="mt-2 block">aspirasi masuk</span></p>
+                  <p><span className="block text-2xl font-bold leading-none text-black sm:text-4xl">34</span><span className="mt-2 block">kecamatan aktif</span></p>
+                  <p className="hidden sm:block"><span className="block text-4xl font-bold leading-none text-black">24/7</span><span className="mt-2 block">terpantau</span></p>
+                </div>
+                <a href="/lapor-baru" className="group hidden items-center gap-2 font-semibold text-black transition-colors hover:text-[#177a78] sm:flex">
+                  Buat laporan <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </a>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3 sm:mt-7 sm:gap-4">
+                <a
+                  href="#work"
+                  className="group inline-flex shrink-0 items-center gap-3 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#177a78]"
+                >
+                  Jelajahi
+                  <ArrowDownRight className="size-4 transition-transform group-hover:translate-y-0.5 group-hover:translate-x-0.5" />
+                </a>
+                <p className="max-w-md text-xs leading-relaxed text-black/65 sm:text-sm">
+                  Pantau laporan, dukung aspirasi warga lain, dan lihat proses perbaikannya secara terbuka.
+                </p>
+              </div>
+
+              <a
+                href="#work"
+                className="group absolute bottom-0 right-0 hidden w-56 overflow-hidden rounded-2xl border border-black/10 bg-white/70 p-2 shadow-lg backdrop-blur-md lg:block"
+              >
+                <img src="/city-report-inspection.png" alt="" className="h-24 w-full rounded-xl object-cover" />
+                <span className="flex items-center justify-between px-1 pt-2 text-xs font-semibold text-black">
+                  Aspirasi warga <ArrowUpRight className="size-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </span>
+              </a>
+            </div>
           </motion.div>
         )}
 
@@ -218,7 +252,7 @@ export default function HeroScrollStack() {
 
         <motion.div
           style={{ opacity: hintOpacity }}
-          className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
+          className="absolute bottom-8 left-1/2 z-10 hidden -translate-x-1/2 md:block"
         >
           <div className="flex h-10 w-6 items-start justify-center rounded-full border border-black/30 p-1.5">
             <motion.span
